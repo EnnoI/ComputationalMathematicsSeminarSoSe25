@@ -1,16 +1,9 @@
 import sys
 import os
 import numpy as np
-import pandas as pd
-
-def initial_CH_tanh_1D(X):
-    return np.tanh(X) + 0.05 * (2. * np.random.rand(X.size) - 1.)
 
 def initial_CH_tanh_2D(X, Y):
     return np.tanh(X**2 + Y**2) + 0.05 * (2 * np.random.rand(int(np.sqrt(X.size)), int(np.sqrt(Y.size))) - 1)
-
-def initial_CH_rand_1D(X):
-    return 2. * np.random.rand(X.size) - 1.
 
 def initial_CH_rand_2D(X, Y):
     return 2. * np.random.rand(int(np.sqrt(X.size)), int(np.sqrt(Y.size))) - 1.
@@ -106,9 +99,6 @@ def solve_ambplus_2D(phi_0=None, t_state = 0.0, t_end = 100.0, tau = 0.01, eps_v
     out_file = f"phi_{ii+1}.csv"
     np.savetxt(out_file, phi.real, delimiter=",")
     print(f"phi saved to {out_file}")
-    out_file = f"f_phi.npy"
-    np.save(out_file, f_phi)
-    print(f"f_phi saved to {out_file}")
 
 def solve_CH_2D(phi_0=None, t_state = 0.0, t_end = 1000.0, tau = 0.1, eps_val=0.01, lam_val=1., s_start = -32.*np.pi, s_end = 32.*np.pi, s_N = 200):
     log_file = "log.csv"
@@ -182,65 +172,6 @@ def solve_CH_2D(phi_0=None, t_state = 0.0, t_end = 1000.0, tau = 0.1, eps_val=0.
     out_file = f"phi_{ii+1}.csv"
     np.savetxt(out_file, phi.real, delimiter=",")
     print(f"phi saved to {out_file}")
-
-def solve_CH_1D(phi_0=None, t_state = 0.0, t_end = 1.0, tau = 0.01, eps_val=0.1, lam_val=1., s_start = -2.*np.pi, s_end = 2.*np.pi, s_N = 200):
-    log_file = "log.csv"
-
-    # Setup space discretization:
-    X = np.linspace(s_start, s_end, s_N, endpoint=False)         # real space
-    K = np.fft.fftfreq(s_N, d=(s_end - s_start)/s_N)*2.*np.pi    # fourier space
-    dx = X[1] - X[0]
-
-    # Setup the phis for our time step with initial condition
-    if phi_0 == None:
-        phi = initial_CH_rand_1D(X)
-    else:
-        phi = phi_0
-    f_phi = np.fft.fft(phi)
-
-    # Setup time discretization
-    t_N = round(t_end/tau)
-    print(t_N)
-
-    # checks
-    check = int(t_N/10)
-
-    if not os.path.exists(log_file):
-        with open(log_file, 'w') as f:
-            f.write("iteration,time,total_energy,total_mass,phi_min,phi_max\n")
-
-    # Time stepping loop
-    for ii in range(t_N):
-
-        if ii % check == 0:
-            # Save the result
-            out_file = "phi_" + ii + ".csv"
-            np.savetxt(out_file, phi.real, delimiter=",")
-            print(f"phi saved to {out_file}")
-
-            dphi_dx = np.fft.ifft(1j * K * f_phi).real
-            E = np.sum(eps_val/2. * dphi_dx**2 + lam_val/4. * (phi.real**2 - 1.)**2) * dx
-
-            with open(log_file, 'a') as f:
-                    f.write(f"{ii},{t_state},{E},{np.sum(phi.real)*dx},{np.min(phi.real)},{np.max(phi.real)}\n")
-
-        phi_3 = phi**3
-
-        phi_3_fft = np.fft.fft(phi_3)
-
-        f_phi_new = (f_phi - tau * lam_val * K**2 * phi_3_fft) / (1 + tau * K**2 * (eps_val * K**2 - lam_val))
-
-        phi_new = np.fft.ifft(f_phi_new)
-
-        t_state += tau
-
-        phi = phi_new
-        f_phi = f_phi_new
-
-    # print one last time
-    out_file = f"phi_{ii+1}.csv"
-    np.savetxt(out_file, phi.real, delimiter=",")
-    print(f"phi saved to {out_file}")
     
 
 def main():
@@ -262,7 +193,7 @@ def main():
     np.random.seed(0)
 
     # Solve a equation
-    solve_ambplus_2D(phi_0, tau=0.0005, t_end=10, s_N=100)
+    solve_ambplus_2D(phi_0, tau=0.001, t_end=100, s_N=200)
 
 if __name__ == "__main__":
     main()

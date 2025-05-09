@@ -15,7 +15,7 @@ cbar = fig.colorbar(im, ax=ax)
 title = ax.set_title("Iteration = 0")
 
 # List of frame indices
-k_values = list(range(0, 1+20000, 2000))
+k_values = list(range(0, 1+100000, 10000))
 
 # Animation update function
 def update(frame):
