@@ -5,7 +5,11 @@ import matplotlib.animation as animation
 s_start = -32*np.pi
 s_end = 32*np.pi
 
-t_state, t_len, tau, eps_val, a, b, lam_val, zeta, D, M, s_start, s_end, s_N = np.loadtxt("parameters.csv", delimiter=",", skiprows=1)
+parameter_data = np.loadtxt("parameters.csv", delimiter=",", skiprows=1)
+t_state, t_len, tau, eps_val, a, b, lam_val, zeta, D, M, s_start, s_end, s_N = parameter_data
+
+log_data = np.loadtxt("log.csv", delimiter=",", skiprows=1)
+k_values = np.astype(log_data[:, 0], int) # List of frame indices
 
 fig, ax = plt.subplots()
 
@@ -14,9 +18,6 @@ phi0 = np.load("phi_0.npy")
 im = ax.imshow(phi0, extent=[s_start, s_end, s_start, s_end], cmap='inferno', vmin=-1, vmax=1)  # set fixed vmin/vmax if possible
 cbar = fig.colorbar(im, ax=ax)
 title = ax.set_title("Iteration = 0")
-
-# List of frame indices
-k_values = list(range(0, 1+26000, 2000))
 
 # Animation update function
 def update(frame):
