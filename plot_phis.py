@@ -5,6 +5,8 @@ import matplotlib.animation as animation
 s_start = -32*np.pi
 s_end = 32*np.pi
 
+t_state, t_len, tau, eps_val, a, b, lam_val, zeta, D, M, s_start, s_end, s_N = np.loadtxt("parameters.csv", delimiter=",", skiprows=1)
+
 fig, ax = plt.subplots()
 
 # Read the first frame to initialize the plot and colorbar
@@ -14,7 +16,7 @@ cbar = fig.colorbar(im, ax=ax)
 title = ax.set_title("Iteration = 0")
 
 # List of frame indices
-k_values = list(range(0, 1+20000, 2000))
+k_values = list(range(0, 1+26000, 2000))
 
 # Animation update function
 def update(frame):

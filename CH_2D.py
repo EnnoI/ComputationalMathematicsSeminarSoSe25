@@ -17,12 +17,7 @@ def inital_amb_seperated(X, Y):
 def initial_c_0_2D(X, Y, c_0=0.5):
     return (2.*c_0 - 1) + 0.001*np.random.standard_normal(size=(int(np.sqrt(X.size)), int(np.sqrt(Y.size))))
 
-def solve_ambplus_2D(phi_0=None, t_state = 0.0, t_end = 100.0, tau = 0.01, eps_val=1., a=-0.25, b=0.25, lam_val=1.75, zeta=2.0, D=0.05, M=1., s_start = -32.*np.pi, s_end = 32.*np.pi, s_N = 200):
-
-    # log the parameters used:
-    if not os.path.exists("parameters.csv"):
-        with open("parameters.csv", 'w') as f:
-            f.write(f"t_state={t_state}, \nt_end={t_end}, \ntau={tau}, \neps_val={eps_val}, \na={a}, \nb={b}, \nlam_val={lam_val}, \nzeta={zeta}, \nD={D}, \nM={M}, \ns_start={s_start}, \ns_end={s_end}, \ns_N={s_N}")  
+def solve_ambplus_2D(phi_0=None, t_state=0.0, t_len = 100.0, tau = 0.01, eps_val=1., a=-0.25, b=0.25, lam_val=1.75, zeta=2.0, D=0.05, M=1., s_start = -32.*np.pi, s_end = 32.*np.pi, s_N = 200):
     
     log_file = "log.csv"
 
@@ -45,13 +40,23 @@ def solve_ambplus_2D(phi_0=None, t_state = 0.0, t_end = 100.0, tau = 0.01, eps_v
         prev_iter = 0
     else:
         phi = phi_0
-        data = np.loadtxt(log_file, delimiter=",", skiprows=1)
-        prev_iter = data[-1, 0]
+        log_data = np.loadtxt(log_file, delimiter=",", skiprows=1)
+        prev_iter = int(log_data[-1, 0])
+        t_state = log_data[-1, 1]
+
+    # log the parameters used:
+    if not os.path.exists("parameters.csv"):
+        with open("parameters.csv", 'w') as f:
+            f.write("t_state,t_len,tau,eps_val,a,b,lam_val,zeta,D,M,s_start,s_end,s_N\n")
+            f.write(f"{t_state},{t_len},{tau},{eps_val},{a},{b},{lam_val},{zeta},{D},{M},{s_start},{s_end},{s_N}\n")
+    else:
+        with open("parameters.csv", 'w') as f:
+            f.write(f"{t_state},{t_len},{tau},{eps_val},{a},{b},{lam_val},{zeta},{D},{M},{s_start},{s_end},{s_N}\n")
 
     f_phi = np.fft.fft2(phi)
 
     # Setup time discretization
-    t_N = round(t_end/tau) 
+    t_N = round(t_len/tau) 
 
     # check every 10 steps
     check = int(t_N/10)   
@@ -108,7 +113,7 @@ def solve_ambplus_2D(phi_0=None, t_state = 0.0, t_end = 100.0, tau = 0.01, eps_v
     with open(log_file, 'a') as f:
         f.write(f"{ii+1},{t_state},{np.sum(phi.real)*dx*dy},{np.min(phi.real)},{np.max(phi.real)}\n")
 
-def solve_CH_2D(phi_0=None, t_state = 0.0, t_end = 1000.0, tau = 0.1, eps_val=0.01, lam_val=1., s_start = -32.*np.pi, s_end = 32.*np.pi, s_N = 200):
+def solve_CH_2D(phi_0=None, t_state=0.0, t_len = 1000.0, tau = 0.1, eps_val=0.01, lam_val=1., s_start = -32.*np.pi, s_end = 32.*np.pi, s_N = 200):
     
     log_file = "log.csv"
 
@@ -129,13 +134,14 @@ def solve_CH_2D(phi_0=None, t_state = 0.0, t_end = 1000.0, tau = 0.1, eps_val=0.
         phi = initial_c_0_2D(X, Y, 0.4)
     else:
         phi = phi_0
-        data = np.loadtxt(log_file, delimiter=",", skiprows=1)
-        prev_iter = data[-1, 0]
+        log_data = np.loadtxt(log_file, delimiter=",", skiprows=1)
+        prev_iter = int(log_data[-1, 0])
+        t_state = log_data[-1, 1]
 
     f_phi = np.fft.fft2(phi)
 
     # Setup time discretization
-    t_N = round(t_end/tau) 
+    t_N = round(t_len/tau) 
 
     # checks
     check = int(t_N/10)
@@ -208,9 +214,9 @@ def main():
         N = 200
 
     np.random.seed(0)
-    
+
     # Solve an equation
-    solve_ambplus_2D(phi_0, s_N=N, tau=0.02, t_end=400)
+    solve_ambplus_2D(phi_0, s_N=N, tau=0.02, t_len=400)
 
 if __name__ == "__main__":
     main()
