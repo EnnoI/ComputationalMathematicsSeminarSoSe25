@@ -25,8 +25,8 @@ def solve_ambplus_2D(phi_0=None, t_state=0.0, t_len = 100.0, tau = 0.01, eps_val
     x = np.linspace(s_start, s_end, s_N, endpoint=False)                # real space
     y = np.linspace(s_start, s_end, s_N, endpoint=False)
     X, Y = np.meshgrid(x, y, indexing="ij")
-    kx = np.fft.fftfreq(s_N, d=(s_end - s_start)/s_N) *2*np.pi  	    # fourier space
-    ky = np.fft.fftfreq(s_N, d=(s_end - s_start)/s_N) *2*np.pi
+    kx = np.fft.fftfreq(s_N, d=(s_end - s_start)/s_N)*2*np.pi  	    # fourier space
+    ky = np.fft.fftfreq(s_N, d=(s_end - s_start)/s_N)*2*np.pi
     KX, KY = np.meshgrid(kx, ky, indexing="ij")
     K_2 = KX**2 + KY**2
     K_4 = K_2**2
@@ -45,13 +45,12 @@ def solve_ambplus_2D(phi_0=None, t_state=0.0, t_len = 100.0, tau = 0.01, eps_val
         t_state = log_data[-1, 1]
 
     # log the parameters used:
-    if not os.path.exists("parameters.csv"):
-        with open("parameters.csv", 'w') as f:
-            f.write("t_state,t_len,tau,eps_val,a,b,lam_val,zeta,D,M,s_start,s_end,s_N\n")
-            f.write(f"{t_state},{t_len},{tau},{eps_val},{a},{b},{lam_val},{zeta},{D},{M},{s_start},{s_end},{s_N}\n")
-    else:
-        with open("parameters.csv", 'w') as f:
-            f.write(f"{t_state},{t_len},{tau},{eps_val},{a},{b},{lam_val},{zeta},{D},{M},{s_start},{s_end},{s_N}\n")
+    with open("parameters.csv", 'w') as f:
+        f.write("t_state,t_len,tau,eps_val,a,b,lam_val,zeta,D,M,s_start,s_end,s_N\n")
+        f.write(f"{t_state},{t_len},{tau},{eps_val},{a},{b},{lam_val},{zeta},{D},{M},{s_start},{s_end},{s_N}\n")
+    # else:
+    #     with open("parameters.csv", 'w') as f:
+    #         f.write(f"{t_state},{t_len},{tau},{eps_val},{a},{b},{lam_val},{zeta},{D},{M},{s_start},{s_end},{s_N}\n")
 
     f_phi = np.fft.fft2(phi)
 
@@ -59,7 +58,8 @@ def solve_ambplus_2D(phi_0=None, t_state=0.0, t_len = 100.0, tau = 0.01, eps_val
     t_N = round(t_len/tau) 
 
     # check every 10 steps
-    check = int(t_N/10)   
+    check = int(t_N/10)
+    check = 2000 
 
     # Setup the logging
     if not os.path.exists(log_file):
@@ -216,7 +216,7 @@ def main():
     np.random.seed(0)
 
     # Solve an equation
-    solve_ambplus_2D(phi_0, s_N=N, tau=0.02, t_len=400)
+    solve_ambplus_2D(phi_0, s_N=N, tau=0.02, t_len=40000)
 
 if __name__ == "__main__":
     main()
