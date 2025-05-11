@@ -15,9 +15,9 @@ def inital_amb_seperated(X, Y):
     return 0.9*base + 0.1*initial_CH_rand_2D(X, Y)
 
 def initial_c_0_2D(X, Y, c_0=0.5):
-    return (2.*c_0 - 1) + 0.001*np.random.standard_normal(size=(int(np.sqrt(X.size)), int(np.sqrt(Y.size))))
+    return (2.*c_0 - 1.) + 0.001*np.random.standard_normal(size=(int(np.sqrt(X.size)), int(np.sqrt(Y.size))))
 
-def solve_ambplus_2D(phi_0=None, t_state=0.0, t_len = 100.0, tau = 0.01, eps_val=1., a=-0.25, b=0.25, lam_val=1.75, zeta=2.0, D=0.05, M=1., s_start = -32.*np.pi, s_end = 32.*np.pi, s_N = 200):
+def solve_ambplus_2D(phi_0=None, c_0=0.4, t_state=0.0, t_len = 100.0, tau = 0.01, eps_val=1., a=-0.25, b=0.25, lam_val=1.75, zeta=2.0, D=0.05, M=1., s_start = -32.*np.pi, s_end = 32.*np.pi, s_N = 200):
     
     log_file = "log.csv"
 
@@ -36,7 +36,7 @@ def solve_ambplus_2D(phi_0=None, t_state=0.0, t_len = 100.0, tau = 0.01, eps_val
     
     # Setup the phis for our time step with initial condition
     if phi_0 is None:
-        phi = initial_c_0_2D(X, Y, 0.4)
+        phi = initial_c_0_2D(X, Y, c_0)
         prev_iter = 0
     else:
         phi = phi_0
@@ -46,11 +46,8 @@ def solve_ambplus_2D(phi_0=None, t_state=0.0, t_len = 100.0, tau = 0.01, eps_val
 
     # log the parameters used:
     with open("parameters.csv", 'w') as f:
-        f.write("t_state,t_len,tau,eps_val,a,b,lam_val,zeta,D,M,s_start,s_end,s_N\n")
-        f.write(f"{t_state},{t_len},{tau},{eps_val},{a},{b},{lam_val},{zeta},{D},{M},{s_start},{s_end},{s_N}\n")
-    # else:
-    #     with open("parameters.csv", 'w') as f:
-    #         f.write(f"{t_state},{t_len},{tau},{eps_val},{a},{b},{lam_val},{zeta},{D},{M},{s_start},{s_end},{s_N}\n")
+        f.write("c_0,t_state,t_len,tau,eps_val,a,b,lam_val,zeta,D,M,s_start,s_end,s_N\n")
+        f.write(f"{c_0},{t_state},{t_len},{tau},{eps_val},{a},{b},{lam_val},{zeta},{D},{M},{s_start},{s_end},{s_N}\n")
 
     f_phi = np.fft.fft2(phi)
 
@@ -216,7 +213,7 @@ def main():
     np.random.seed(0)
 
     # Solve an equation
-    solve_ambplus_2D(phi_0, s_N=N, tau=0.02, t_len=40000)
+    solve_ambplus_2D(phi_0, c_0=0.3, s_N=N, tau=0.02, t_len=800, D=0.1)
 
 if __name__ == "__main__":
     main()
