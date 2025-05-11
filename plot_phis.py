@@ -6,7 +6,7 @@ s_start = -32*np.pi
 s_end = 32*np.pi
 
 parameter_data = np.loadtxt("parameters.csv", delimiter=",", skiprows=1)
-t_state, t_len, tau, eps_val, a, b, lam_val, zeta, D, M, s_start, s_end, s_N = parameter_data
+c_0, t_state, t_len, tau, eps_val, a, b, lam_val, zeta, D, M, s_start, s_end, s_N = parameter_data
 
 log_data = np.loadtxt("log.csv", delimiter=",", skiprows=1)
 k_values = np.astype(log_data[:, 0], int) # List of frame indices
