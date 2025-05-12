@@ -129,7 +129,7 @@ def solve_ambplus_2D(phi_0=None, c_0=0.4, t_state=0.0, t_len = 100.0, tau = 0.01
     np.save(out_file, phi.real)
     print(f"phi saved to {out_file}")
     with open(log_file, 'a') as f:
-        f.write(f"{ii+1},{t_state},{np.sum(phi.real)*dx*dy},{np.min(phi.real)},{np.max(phi.real)}\n")
+        f.write(f"{ii+1},{t_state},{np.sum(phi.real)*dx*dy / L**2},{np.min(phi.real)},{np.max(phi.real)}\n")
 
 def solve_CH_2D(phi_0=None, t_state=0.0, t_len = 1000.0, tau = 0.1, eps_val=0.01, lam_val=1., s_start = -32.*np.pi, s_end = 32.*np.pi, s_N = 200):
     
