@@ -17,22 +17,40 @@ def inital_amb_seperated(X, Y):
 def initial_c_0_2D(X, Y, c_0=0.5):
     return (2.*c_0 - 1.) + 0.001*np.random.standard_normal(size=(int(np.sqrt(X.size)), int(np.sqrt(Y.size))))
 
+# We want the overall average to be c_0
+# r, c_0 in [0,1], L length of domain, S factor of 
+# how large the concentration in the circle is.
+def initial_dot_2D(X, Y, r, L, c_0=0.5, S=2):
+    radius_mask = X**2 + Y**2 < (r*L)**2
+    c_0_outside = (S*r**2 - 1.)/(r**2 - 1.) * c_0
+    c_0_inside = S*c_0
+    base = initial_c_0_2D(X, Y, c_0=c_0_outside)
+    base[radius_mask] = (2. * c_0_inside - 1.)
+    return base
+
+
 def solve_ambplus_2D(phi_0=None, c_0=0.4, t_state=0.0, t_len = 100.0, tau = 0.01, eps_val=1., a=-0.25, b=0.25, lam_val=1.75, zeta=2.0, D=0.05, M=1., s_start = -32.*np.pi, s_end = 32.*np.pi, s_N = 200):
     
     log_file = "log.csv"
 
     # Setup space discretization:
+    L = s_end - s_start
     x = np.linspace(s_start, s_end, s_N, endpoint=False)                # real space
     y = np.linspace(s_start, s_end, s_N, endpoint=False)
     X, Y = np.meshgrid(x, y, indexing="ij")
-    kx = np.fft.fftfreq(s_N, d=(s_end - s_start)/s_N)*2*np.pi  	    # fourier space
-    ky = np.fft.fftfreq(s_N, d=(s_end - s_start)/s_N)*2*np.pi
+    kx = np.fft.fftfreq(s_N, d=L/s_N)*2*np.pi  	    # fourier space
+    ky = np.fft.fftfreq(s_N, d=L/s_N)*2*np.pi
     KX, KY = np.meshgrid(kx, ky, indexing="ij")
     K_2 = KX**2 + KY**2
     K_4 = K_2**2
+
+    # Create a dealisiasing mask
+    K_cutoff = 0.67 * K_2.max()
+    dealiasing_mask = K_2 < K_cutoff**2
+
     #KXKY = KX * KY
-    dx = X[0][1] - X[0][0]
-    dy = Y[1][0] - Y[0][0]
+    dx = abs(X[1][0] - X[0][0])
+    dy = abs(Y[0][1] - Y[0][0])
     
     # Setup the phis for our time step with initial condition
     if phi_0 is None:
@@ -73,7 +91,7 @@ def solve_ambplus_2D(phi_0=None, c_0=0.4, t_state=0.0, t_len = 100.0, tau = 0.01
             print(f"phi saved to {out_file}")
 
             with open(log_file, 'a') as f:
-                    f.write(f"{ii},{t_state},{np.sum(phi.real)*dx*dy},{np.min(phi.real)},{np.max(phi.real)}\n")
+                    f.write(f"{ii},{t_state},{np.sum(phi.real)*dx*dy / L**2},{np.min(phi.real)},{np.max(phi.real)}\n")
 
         phi_3 = phi**3
 
@@ -87,6 +105,9 @@ def solve_ambplus_2D(phi_0=None, c_0=0.4, t_state=0.0, t_len = 100.0, tau = 0.01
         grad_phi_2 = dphi_dx**2 + dphi_dy**2
 
         non_linear_term = - K_2 * np.fft.fft2(b * phi_3 + lam_val * grad_phi_2) - 1j * zeta * (KX * lapl_phi_prod_grad_phi_x_fft + KY * lapl_phi_prod_grad_phi_y_fft)
+        
+        # Dealiasing the nonlinear term may improve stability
+        non_linear_term *= dealiasing_mask
 
         white_noise_x_fft = np.fft.fft2(np.random.standard_normal(size=KX.shape))
         white_noise_y_fft = np.fft.fft2(np.random.standard_normal(size=KY.shape))
@@ -213,7 +234,7 @@ def main():
     np.random.seed(0)
 
     # Solve an equation
-    solve_ambplus_2D(phi_0, c_0=0.3, s_N=N, tau=0.02, t_len=800, D=0.1)
+    solve_ambplus_2D(phi_0, c_0=0.3, s_N=N, tau=0.02, t_len=800, D=0.2, zeta=4., lam_val=1.)
 
 if __name__ == "__main__":
     main()
