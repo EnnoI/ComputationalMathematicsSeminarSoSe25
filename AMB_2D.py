@@ -101,6 +101,44 @@ def solve_ambplus_2D(phi_0=None, c_0=0.4, t_state=0.0, t_len = 100.0, tau = 0.01
 
         return - np.sqrt(2*D*M) * 1j * (KX * white_noise_x_fft + KY * white_noise_y_fft)
 
+    def eval_rhs(phi, f_phi):
+        non_linear_term = eval_non_linear_term(phi, f_phi)
+        
+        # Dealiasing the nonlinear term may improve stability
+        # non_linear_term *= dealiasing_mask
+
+        gaussian_term = eval_gaussian_term()
+        return (M*((-a * K_2 - eps_val * K_4)*f_phi + non_linear_term) + gaussian_term)
+
+    def pred_corr_euler_step(phi, f_phi):
+        # predict using explicit euler
+        f_phi_prediction = f_phi + tau * eval_rhs(phi, f_phi)
+        phi_prediction = np.fft.ifft2(f_phi_prediction)
+
+        non_linear_term = eval_non_linear_term(phi_prediction, f_phi_prediction)
+        gaussian_term = eval_gaussian_term()
+
+        # correct using semi-implicit euler
+        return (f_phi + tau * (M * non_linear_term + gaussian_term)) / (1 + tau * M *(a * K_2 + eps_val * K_4))
+
+    def semi_impl_euler_step(phi, f_phi):
+        non_linear_term = eval_non_linear_term(phi, f_phi)
+        gaussian_term = eval_gaussian_term()
+        return (f_phi + tau * (M * non_linear_term + gaussian_term)) / (1 + tau * M *(a * K_2 + eps_val * K_4))
+
+    def rk4_step(phi, f_phi):
+        k_1 = eval_rhs(phi, f_phi)
+        f_phi_k_1 = f_phi + tau/2. * k_1
+        phi_k_1 = np.fft.ifft2(f_phi_k_1)
+        k_2 = eval_rhs(phi_k_1, f_phi_k_1)
+        f_phi_k_2 = f_phi + tau/2. * k_2
+        phi_k_2 = np.fft.ifft2(f_phi_k_2)
+        k_3 = eval_rhs(phi_k_2, f_phi_k_2)
+        f_phi_k_3 = f_phi + tau * k_3
+        phi_k_3 = np.fft.ifft2(f_phi_k_3)
+        k_4 = eval_rhs(phi_k_3, f_phi_k_3)
+        return f_phi + tau/6. * (k_1 + 2.0*k_2 + 2.0*k_3 + k_4)
+
     # Time stepping loop
     for ii in range(prev_iter, prev_iter+t_N):
 
@@ -113,23 +151,7 @@ def solve_ambplus_2D(phi_0=None, c_0=0.4, t_state=0.0, t_len = 100.0, tau = 0.01
             with open(log_file, 'a') as f:
                     f.write(f"{ii},{t_state},{np.sum(phi.real)*dx*dy / L**2},{np.min(phi.real)},{np.max(phi.real)}\n")
 
-        non_linear_term = eval_non_linear_term(phi, f_phi)
-        
-        # Dealiasing the nonlinear term may improve stability
-        # non_linear_term *= dealiasing_mask
-
-        gaussian_term = eval_gaussian_term()
-
-        # predict using explicit euler
-        f_phi_prediction = f_phi + tau * (M*((-a * K_2 - eps_val * K_4)*f_phi + non_linear_term) + gaussian_term)
-        phi_rediction = np.fft.ifft2(f_phi_prediction)
-
-        non_linear_term = eval_non_linear_term(phi_rediction, f_phi_prediction)
-        gaussian_term = eval_gaussian_term()
-
-        # correct using semi-implicit euler
-        f_phi_new = (f_phi + tau * (M * non_linear_term + gaussian_term)) / (1 + tau * M *(a * K_2 + eps_val * K_4))
-
+        f_phi_new = rk4_step(phi, f_phi)
         phi_new = np.fft.ifft2(f_phi_new)
 
         t_state += tau
