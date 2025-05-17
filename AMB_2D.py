@@ -28,7 +28,6 @@ def initial_dot_2D(X, Y, r, L, c_0=0.5, S=2):
     base[radius_mask] = (2. * c_0_inside - 1.)
     return base
 
-
 def solve_ambplus_2D(phi_0=None, c_0=0.4, t_state=0.0, t_len = 100.0, tau = 0.01, eps_val=1., a=-0.25, b=0.25, lam_val=1.75, zeta=2.0, D=0.05, M=1., s_start = -32.*np.pi, s_end = 32.*np.pi, s_N = 200):
     
     log_file = "log.csv"
@@ -74,12 +73,33 @@ def solve_ambplus_2D(phi_0=None, c_0=0.4, t_state=0.0, t_len = 100.0, tau = 0.01
 
     # check every 10 steps
     check = int(t_N/10)
-    check = 20
+    check = 2000
 
     # Setup the logging
     if not os.path.exists(log_file):
         with open(log_file, 'w') as f:
             f.write("iteration,time,total_mass,phi_min,phi_max\n")
+
+    # Setup evaluation of different terms
+    def eval_non_linear_term(phi, f_phi):
+        phi_3 = phi**3
+
+        dphi_dx = np.fft.ifft2(1j * KX * f_phi)
+        dphi_dy = np.fft.ifft2(1j * KY * f_phi)
+
+        laplacian_phi = np.fft.ifft2(-K_2 * f_phi)
+        lapl_phi_prod_grad_phi_x_fft = np.fft.fft2(laplacian_phi * dphi_dx)
+        lapl_phi_prod_grad_phi_y_fft = np.fft.fft2(laplacian_phi * dphi_dy)
+
+        grad_phi_2 = dphi_dx**2 + dphi_dy**2
+
+        return - K_2 * np.fft.fft2(b * phi_3 + lam_val * grad_phi_2) - 1j * zeta * (KX * lapl_phi_prod_grad_phi_x_fft + KY * lapl_phi_prod_grad_phi_y_fft)
+    
+    def eval_gaussian_term():
+        white_noise_x_fft = np.fft.fft2(np.random.standard_normal(size=KX.shape))
+        white_noise_y_fft = np.fft.fft2(np.random.standard_normal(size=KY.shape))
+
+        return - np.sqrt(2*D*M) * 1j * (KX * white_noise_x_fft + KY * white_noise_y_fft)
 
     # Time stepping loop
     for ii in range(prev_iter, prev_iter+t_N):
@@ -93,27 +113,21 @@ def solve_ambplus_2D(phi_0=None, c_0=0.4, t_state=0.0, t_len = 100.0, tau = 0.01
             with open(log_file, 'a') as f:
                     f.write(f"{ii},{t_state},{np.sum(phi.real)*dx*dy / L**2},{np.min(phi.real)},{np.max(phi.real)}\n")
 
-        phi_3 = phi**3
-
-        dphi_dx = np.fft.ifft2(1j * KX * f_phi)
-        dphi_dy = np.fft.ifft2(1j * KY * f_phi)
-
-        laplacian_phi = np.fft.ifft2(-K_2 * f_phi)
-        lapl_phi_prod_grad_phi_x_fft = np.fft.fft2(laplacian_phi * dphi_dx)
-        lapl_phi_prod_grad_phi_y_fft = np.fft.fft2(laplacian_phi * dphi_dy)
-
-        grad_phi_2 = dphi_dx**2 + dphi_dy**2
-
-        non_linear_term = - K_2 * np.fft.fft2(b * phi_3 + lam_val * grad_phi_2) - 1j * zeta * (KX * lapl_phi_prod_grad_phi_x_fft + KY * lapl_phi_prod_grad_phi_y_fft)
+        non_linear_term = eval_non_linear_term(phi, f_phi)
         
         # Dealiasing the nonlinear term may improve stability
         # non_linear_term *= dealiasing_mask
 
-        white_noise_x_fft = np.fft.fft2(np.random.standard_normal(size=KX.shape))
-        white_noise_y_fft = np.fft.fft2(np.random.standard_normal(size=KY.shape))
+        gaussian_term = eval_gaussian_term()
 
-        gaussian_term = - np.sqrt(2*D*M) * 1j * (KX * white_noise_x_fft + KY * white_noise_y_fft)
+        # predict using explicit euler
+        f_phi_prediction = f_phi + tau * (M*((-a * K_2 - eps_val * K_4)*f_phi + non_linear_term) + gaussian_term)
+        phi_rediction = np.fft.ifft2(f_phi_prediction)
 
+        non_linear_term = eval_non_linear_term(phi_rediction, f_phi_prediction)
+        gaussian_term = eval_gaussian_term()
+
+        # correct using semi-implicit euler
         f_phi_new = (f_phi + tau * (M * non_linear_term + gaussian_term)) / (1 + tau * M *(a * K_2 + eps_val * K_4))
 
         phi_new = np.fft.ifft2(f_phi_new)
@@ -234,7 +248,7 @@ def main():
     np.random.seed(0)
 
     # Solve an equation
-    solve_ambplus_2D(phi_0, c_0=0.6, s_N=N, tau=0.02, t_len=40, D=0.2, zeta=4., lam_val=1.)
+    solve_ambplus_2D(phi_0, c_0=0.6, s_N=N, tau=0.02, t_len=400, D=0.2, zeta=4., lam_val=1.)
 
 if __name__ == "__main__":
     main()
