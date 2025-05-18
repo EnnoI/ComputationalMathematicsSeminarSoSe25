@@ -1,4 +1,4 @@
 # ComputationalMathematicsSeminarSoSe25
 AMB+ Model
 
-![Gif not found!](results/vid.gif)
+![Gif not found!](results/dotXL_vid.gif)
