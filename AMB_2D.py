@@ -21,6 +21,7 @@ def initial_c_0_2D(X, Y, c_0=0.5):
 # We want the overall average to be c_0
 # r, c_0 in [0,1], L length of domain, S factor of 
 # how large the concentration in the circle is.
+# TODO: this does not compute an overall average of c_0
 def initial_dot_2D(X, Y, r, L, c_0=0.5, S=2):
     radius_mask = X**2 + Y**2 < (r*L)**2
     c_0_outside = (S*r**2 - 1.)/(r**2 - 1.) * c_0
@@ -63,9 +64,7 @@ def solve_ambplus_2D(phi_0=None, c_0=0.4, t_state=0.0, t_len = 100.0, tau = 0.01
     # Setup the phis for our time step with initial condition
     if phi_0 is None:
         #phi = initial_c_0_2D(X, Y, c_0)
-        #phi = inital_amb_seperated(X, Y)
-        #phi = initial_dot_2D(X, Y, 0.2, L, 0.8, S=0.5)
-        phi = initial_dot_inner_outer_2D(X, Y, r=0.3, L=L, c_0_outside=-1, c_0_inside=0.8)
+        phi = initial_dot_inner_outer_2D(X, Y, r=0.3, L=L, c_0_outside=0.1, c_0_inside=0.8)
         prev_iter = 0
     else:
         phi = phi_0
