@@ -30,10 +30,10 @@ def update(frame):
     # im.set_clim(vmin, vmax)        # Update the image color scale
     # cbar.update_normal(im)         # Redraw colorbar to reflect new limits
 
-    title.set_text(f"Iteration = {k}")
+    title.set_text(f"Iteration = {k}, time = {np.round(tau*k, decimals=2)}")
     return [im, title]
 
 # Create the animation
-ani = animation.FuncAnimation(fig, update, frames=len(k_values), interval=200, blit=False)
-ani.save("vid.gif", writer='pillow', fps=5)
+ani = animation.FuncAnimation(fig, update, frames=len(k_values), interval=1e4*tau, blit=False)
+ani.save("vid.gif", writer='pillow')
 plt.show()
