@@ -56,7 +56,9 @@ def solve_ambplus_2D(phi_0=None, c_0=0.4, t_state=0.0, t_len = 100.0, tau = 0.01
     
     # Setup the phis for our time step with initial condition
     if phi_0 is None:
-        phi = initial_c_0_2D(X, Y, c_0)
+        #phi = initial_c_0_2D(X, Y, c_0)
+        #phi = inital_amb_seperated(X, Y)
+        phi = initial_dot_2D(X, Y, 0.2, L, 0.8, S=0.5)
         prev_iter = 0
     else:
         phi = phi_0
@@ -237,12 +239,12 @@ def main():
         N = phi_0.shape[0]
     else:
         phi_0 = None
-        N = 256
+        N = 101
 
     np.random.seed(0)
 
     # Solve an equation
-    solve_ambplus_2D(phi_0, c_0=0.5, s_N=N, tau=0.02, t_len=800, D=0., zeta=4., lam_val=1., s_start=-32*np.pi, s_end=32*np.pi)
+    solve_ambplus_2D(phi_0, c_0=0.8, s_N=N, tau=0.02, t_len=800, D=0.05, zeta=1.5, lam_val=2.0, s_start=-16*np.pi, s_end=16*np.pi)
 
 if __name__ == "__main__":
     main()
