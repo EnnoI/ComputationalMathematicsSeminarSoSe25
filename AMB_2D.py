@@ -44,8 +44,8 @@ def solve_ambplus_2D(phi_0=None, c_0=0.4, t_state=0.0, t_len = 100.0, tau = 0.01
     K_4 = K_2**2
 
     # Create a dealisiasing mask
-    K_cutoff = 0.67 * K_2.max()
-    dealiasing_mask = K_2 < K_cutoff**2
+    K_cutoff = 0.67**2 * K_2.max()
+    dealiasing_mask = K_2 < K_cutoff
 
     #KXKY = KX * KY
     dx = abs(X[1][0] - X[0][0])
@@ -95,23 +95,7 @@ def solve_ambplus_2D(phi_0=None, c_0=0.4, t_state=0.0, t_len = 100.0, tau = 0.01
 
         return - K_2 * np.fft.fft2(b * phi_3 + lam_val * grad_phi_2) - 1j * zeta * (KX * lapl_phi_prod_grad_phi_x_fft + KY * lapl_phi_prod_grad_phi_y_fft)
     
-    def eval_gaussian_term():
-        white_noise_x_fft = np.fft.fft2(np.random.standard_normal(size=KX.shape))
-        white_noise_y_fft = np.fft.fft2(np.random.standard_normal(size=KY.shape))
-
-        return - np.sqrt(2*D*M) * 1j * (KX * white_noise_x_fft + KY * white_noise_y_fft)
-
-    def eval_rhs(phi, f_phi):
-        non_linear_term = eval_non_linear_term(phi, f_phi)
-        
-        # Dealiasing the nonlinear term may improve stability
-        # non_linear_term *= dealiasing_mask
-
-        gaussian_term = eval_gaussian_term()
-        return (M*((-a * K_2 - eps_val * K_4)*f_phi + non_linear_term) + gaussian_term)
-
-    def expl_euler_step(phi, f_phi):
-        # ignore M for now
+    def eval_non_linear_term_2(phi, f_phi):
         phi_term = (b*phi**2 + a) * phi
 
         dphi_dx = np.fft.ifft2(1j * KX * f_phi)
@@ -123,12 +107,34 @@ def solve_ambplus_2D(phi_0=None, c_0=0.4, t_state=0.0, t_len = 100.0, tau = 0.01
 
         grad_phi_2 = dphi_dx**2 + dphi_dy**2
 
-        rhs = -K_2 * np.fft.fft2(phi_term + lam_val * grad_phi_2) - eps_val * K_4*f_phi - 1j * zeta * (KX * lapl_phi_prod_grad_phi_x_fft + KY * lapl_phi_prod_grad_phi_y_fft) + eval_gaussian_term()
-        return f_phi + tau * rhs
+        return - K_2 * np.fft.fft2(phi_term + lam_val * grad_phi_2) - 1j * zeta * (KX * lapl_phi_prod_grad_phi_x_fft + KY * lapl_phi_prod_grad_phi_y_fft)
+
+    def eval_gaussian_term():
+        white_noise_x_fft = np.fft.fft2(np.random.standard_normal(size=KX.shape))
+        white_noise_y_fft = np.fft.fft2(np.random.standard_normal(size=KY.shape))
+
+        return - np.sqrt(2*D*M) * 1j * (KX * white_noise_x_fft + KY * white_noise_y_fft)
+
+    def eval_rhs(phi, f_phi):
+        phi_term = (b*phi**2 + a) * phi
+
+        dphi_dx = np.fft.ifft2(1j * KX * f_phi)
+        dphi_dy = np.fft.ifft2(1j * KY * f_phi)
+
+        laplacian_phi = np.fft.ifft2(-K_2 * f_phi)
+        lapl_phi_prod_grad_phi_x_fft = np.fft.fft2(laplacian_phi * dphi_dx)
+        lapl_phi_prod_grad_phi_y_fft = np.fft.fft2(laplacian_phi * dphi_dy)
+
+        grad_phi_2 = dphi_dx**2 + dphi_dy**2
+
+        return -K_2 * M * np.fft.fft2(phi_term + lam_val * grad_phi_2) - eps_val * M * K_4*f_phi - 1j * zeta * M * (KX * lapl_phi_prod_grad_phi_x_fft + KY * lapl_phi_prod_grad_phi_y_fft) + eval_gaussian_term()
+
+    def expl_euler_step(phi, f_phi):
+        return f_phi + tau * eval_rhs(phi, f_phi)
 
     def pred_corr_euler_step(phi, f_phi):
         # predict using explicit euler
-        f_phi_prediction = f_phi + tau * eval_rhs(phi, f_phi)
+        f_phi_prediction = expl_euler_step(phi, f_phi)
         phi_prediction = np.fft.ifft2(f_phi_prediction)
 
         non_linear_term = eval_non_linear_term(phi_prediction, f_phi_prediction)
@@ -142,10 +148,11 @@ def solve_ambplus_2D(phi_0=None, c_0=0.4, t_state=0.0, t_len = 100.0, tau = 0.01
         gaussian_term = eval_gaussian_term()
         return (f_phi + tau * (M * non_linear_term + gaussian_term)) / (1 + tau * M *(a * K_2 + eps_val * K_4))
     
-    def semi_impl_euler_step(phi, f_phi):
-        non_linear_term = eval_non_linear_term(phi, f_phi)
+    def semi_impl_euler_step_2(phi, f_phi):
+        non_linear_term = eval_non_linear_term_2(phi, f_phi)
+        non_linear_term *= dealiasing_mask
         gaussian_term = eval_gaussian_term()
-        return (f_phi + tau * (M * non_linear_term + gaussian_term)) / (1 + tau * M *(a * K_2 + eps_val * K_4))
+        return (f_phi + tau * (M * non_linear_term + gaussian_term)) / (1 + tau * M *eps_val * K_4)
 
     def rk4_step(phi, f_phi):
         k_1 = eval_rhs(phi, f_phi)
@@ -173,7 +180,7 @@ def solve_ambplus_2D(phi_0=None, c_0=0.4, t_state=0.0, t_len = 100.0, tau = 0.01
                     f.write(f"{ii},{t_state},{np.sum(phi.real)*dx*dy / L**2},{np.min(phi.real)},{np.max(phi.real)}\n")
 
         # f_phi_new = rk4_step(phi, f_phi)
-        f_phi_new = expl_euler_step(phi, f_phi)
+        f_phi_new = semi_impl_euler_step_2(phi, f_phi)
         phi_new = np.fft.ifft2(f_phi_new)
 
         t_state += tau
@@ -292,7 +299,7 @@ def main():
     np.random.seed(0)
 
     # Solve an equation
-    solve_ambplus_2D(phi_0, c_0=0.6, s_N=N, tau=0.005, t_len=400, D=0.2, zeta=4., lam_val=1.)
+    solve_ambplus_2D(phi_0, c_0=0.6, s_N=2*N, tau=0.005, t_len=400, D=0.2, zeta=4., lam_val=1.)
 
 if __name__ == "__main__":
     main()
