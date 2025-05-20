@@ -43,6 +43,7 @@ def initial_dot_inner_outer_2D(X, Y, r, L, c_0_outside, c_0_inside):
 def solve_ambplus_2D(phi_0=None, c_0=0.4, t_state=0.0, t_len = 100.0, tau = 0.01, eps_val=1., a=-0.25, b=0.25, lam_val=1.75, zeta=2.0, D=0.05, M=1., s_start = -32.*np.pi, s_end = 32.*np.pi, s_N = 200):
     
     log_file = "log.csv"
+    prev_iter = 0
 
     # Setup space discretization:
     L = s_end - s_start
@@ -68,12 +69,12 @@ def solve_ambplus_2D(phi_0=None, c_0=0.4, t_state=0.0, t_len = 100.0, tau = 0.01
     if phi_0 is None:
         #phi = initial_c_0_2D(X, Y, c_0)
         phi = initial_dot_inner_outer_2D(X, Y, r=0.3, L=L, c_0_outside=0.1, c_0_inside=0.8)
-        prev_iter = 0
     else:
         phi = phi_0
-        log_data = np.loadtxt(log_file, delimiter=",", skiprows=1)
-        prev_iter = int(log_data[-1, 0])
-        t_state = log_data[-1, 1]
+        if os.path.exists(log_file):
+            log_data = np.loadtxt(log_file, delimiter=",", skiprows=1)
+            prev_iter = int(log_data[-1, 0])
+            t_state = log_data[-1, 1]
 
     # log the parameters used:
     with open("parameters.csv", 'w') as f:
@@ -252,7 +253,7 @@ def main():
     np.random.seed(0)
 
     # Solve an equation
-    solve_ambplus_2D(phi_0, c_0=0.8, s_N=N, tau=0.001, t_len=400, D=0.024, zeta=4.0, lam_val=1.0, s_start=-32*np.pi, s_end=32*np.pi)
+    solve_ambplus_2D(phi_0, c_0=0.8, s_N=N, tau=0.001, t_len=400, D=0.1, zeta=2.0, lam_val=0.5, s_start=-32*np.pi, s_end=32*np.pi)
 
 if __name__ == "__main__":
     main()
