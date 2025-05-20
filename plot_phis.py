@@ -9,7 +9,8 @@ parameter_data = np.loadtxt("parameters.csv", delimiter=",", skiprows=1)
 c_0, t_state, t_len, tau, eps_val, a, b, lam_val, zeta, D, M, s_start, s_end, s_N = parameter_data
 
 log_data = np.loadtxt("log.csv", delimiter=",", skiprows=1)
-k_values = np.astype(log_data[:, 0], int) # List of frame indices
+k_values = np.astype(np.unique(log_data[:, 0]), int) # List of frame indices
+t_values = np.unique(np.round(log_data[:, 1], decimals=2))
 
 fig, ax = plt.subplots()
 
@@ -30,10 +31,10 @@ def update(frame):
     # im.set_clim(vmin, vmax)        # Update the image color scale
     # cbar.update_normal(im)         # Redraw colorbar to reflect new limits
 
-    title.set_text(f"Iteration = {k}, time = {np.round(tau*k, decimals=2)}")
+    title.set_text(f"Iteration = {k}, time = {t_values[frame]}")
     return [im, title]
 
 # Create the animation
-ani = animation.FuncAnimation(fig, update, frames=len(k_values), interval=1e4*tau, blit=False)
+ani = animation.FuncAnimation(fig, update, frames=len(k_values), interval=200, blit=False)
 ani.save("vid.gif", writer='pillow')
 plt.show()
