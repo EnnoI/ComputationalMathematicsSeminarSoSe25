@@ -2,6 +2,9 @@ import sys
 import os
 import numpy as np
 import time
+import pyfftw.interfaces as pyfftw
+pyfftw.cache.enable()
+
 
 def initial_CH_tanh_2D(X, Y):
     return np.tanh(X**2 + Y**2) + 0.05 * (2 * np.random.rand(int(np.sqrt(X.size)), int(np.sqrt(Y.size))) - 1)
@@ -77,7 +80,7 @@ def solve_ambplus_2D(phi_0=None, c_0=0.4, t_state=0.0, t_len = 100.0, tau = 0.01
         f.write("c_0,t_state,t_len,tau,eps_val,a,b,lam_val,zeta,D,M,s_start,s_end,s_N\n")
         f.write(f"{c_0},{t_state},{t_len},{tau},{eps_val},{a},{b},{lam_val},{zeta},{D},{M},{s_start},{s_end},{s_N}\n")
 
-    f_phi = np.fft.fft2(phi, norm="backward")
+    f_phi = pyfftw.numpy_fft.fft2(phi, norm="backward", threads=8)
 
     # Setup time discretization
     t_N = round(t_len/tau) 
@@ -114,31 +117,30 @@ def solve_ambplus_2D(phi_0=None, c_0=0.4, t_state=0.0, t_len = 100.0, tau = 0.01
 
         phi_3 = phi**3
 
-        dphi_dx = np.fft.ifft2(1j * KX * f_phi, norm="backward")
-        dphi_dy = np.fft.ifft2(1j * KY * f_phi, norm="backward")
+        dphi_dx = pyfftw.numpy_fft.ifft2(1j * KX * f_phi, norm="backward", threads=8)
+        dphi_dy = pyfftw.numpy_fft.ifft2(1j * KY * f_phi, norm="backward", threads=8)
 
-        laplacian_phi = np.fft.ifft2(-K_2 * f_phi, norm="backward")
-        lapl_phi_prod_grad_phi_x_fft = np.fft.fft2(laplacian_phi * dphi_dx, norm="backward")
-        lapl_phi_prod_grad_phi_y_fft = np.fft.fft2(laplacian_phi * dphi_dy, norm="backward")
+        laplacian_phi = pyfftw.numpy_fft.ifft2(-K_2 * f_phi, norm="backward", threads=8)
+        lapl_phi_prod_grad_phi_x_fft = pyfftw.numpy_fft.fft2(laplacian_phi * dphi_dx, norm="backward", threads=8)
+        lapl_phi_prod_grad_phi_y_fft = pyfftw.numpy_fft.fft2(laplacian_phi * dphi_dy, norm="backward", threads=8)
 
         grad_phi_2 = dphi_dx**2 + dphi_dy**2
 
-        non_linear_term = - K_2 * np.fft.fft2(b * phi_3 + lam_val * grad_phi_2, norm="backward") - 1j * zeta * (KX * lapl_phi_prod_grad_phi_x_fft + KY * lapl_phi_prod_grad_phi_y_fft)
+        non_linear_term = - K_2 * pyfftw.numpy_fft.fft2(b * phi_3 + lam_val * grad_phi_2, norm="backward", threads=8) - 1j * zeta * (KX * lapl_phi_prod_grad_phi_x_fft + KY * lapl_phi_prod_grad_phi_y_fft)
         
         # Dealiasing the nonlinear term may improve stability
         non_linear_term *= dealiasing_mask
 
-        white_noise_x_fft = np.fft.fft2(np.random.standard_normal(size=KX.shape), norm="backward")
-        white_noise_y_fft = np.fft.fft2(np.random.standard_normal(size=KY.shape), norm="backward")
+        white_noise_x_fft = pyfftw.numpy_fft.fft2(np.random.standard_normal(size=KX.shape), norm="backward", threads=8)
+        white_noise_y_fft = pyfftw.numpy_fft.fft2(np.random.standard_normal(size=KY.shape), norm="backward", threads=8)
 
         gaussian_term = - np.sqrt(2*D*M) * 1j * (KX * white_noise_x_fft + KY * white_noise_y_fft)
 
-        f_phi_new = (f_phi + tau * M * non_linear_term + gaussian_scale * gaussian_term) / (1 + tau * M *(a * K_2 + eps_val * K_4))
+        f_phi = (f_phi + tau * M * non_linear_term + gaussian_scale * gaussian_term) / (1 + tau * M *(a * K_2 + eps_val * K_4))
 
         # Bookkeeping, setup for next step
-        phi = np.fft.ifft2(f_phi_new, norm="backward")
+        phi = pyfftw.numpy_fft.ifft2(f_phi, norm="backward", threads=8)
         t_state += tau
-        f_phi = f_phi_new
 
     # print one last time
     out_file = f"phi_{ii+1}.npy"
@@ -250,7 +252,7 @@ def main():
     np.random.seed(0)
 
     # Solve an equation
-    solve_ambplus_2D(phi_0, c_0=0.8, s_N=N, tau=0.02, t_len=800, D=0.05, zeta=1.5, lam_val=2.0, s_start=-32*np.pi, s_end=32*np.pi)
+    solve_ambplus_2D(phi_0, c_0=0.8, s_N=N, tau=0.02, t_len=800, D=0.01, zeta=4.0, lam_val=1.0, s_start=-32*np.pi, s_end=32*np.pi)
 
 if __name__ == "__main__":
     main()
