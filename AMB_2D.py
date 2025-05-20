@@ -252,7 +252,7 @@ def main():
     np.random.seed(0)
 
     # Solve an equation
-    solve_ambplus_2D(phi_0, c_0=0.8, s_N=N, tau=0.02, t_len=800, D=0.01, zeta=4.0, lam_val=1.0, s_start=-32*np.pi, s_end=32*np.pi)
+    solve_ambplus_2D(phi_0, c_0=0.8, s_N=N, tau=0.001, t_len=400, D=0.024, zeta=4.0, lam_val=1.0, s_start=-32*np.pi, s_end=32*np.pi)
 
 if __name__ == "__main__":
     main()
