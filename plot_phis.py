@@ -2,8 +2,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 
-s_start = -32*np.pi
-s_end = 32*np.pi
+s_start = -64
+s_end = 64
 
 parameter_data = np.loadtxt("parameters.csv", delimiter=",", skiprows=1)
 c_0, t_state, t_len, tau, eps_val, a, b, lam_val, zeta, D, M, s_start, s_end, s_N = parameter_data
