@@ -18,8 +18,8 @@ def inital_amb_seperated(X, Y):
     base[:half, :] = -1.0
     return 0.9*base + 0.1*initial_CH_rand_2D(X, Y)
 
-def initial_c_0_2D(X, Y, c_0=0.5):
-    return (2.*c_0 - 1.) + 0.001*np.random.standard_normal(size=(int(np.sqrt(X.size)), int(np.sqrt(Y.size))))
+def initial_c_0_2D(X, Y, c_0=0.5, init_noise=0.001):
+    return (2.*c_0 - 1.) + init_noise*np.random.standard_normal(size=(int(np.sqrt(X.size)), int(np.sqrt(Y.size))))
 
 # We want the overall average to be c_0
 # r, c_0 in [0,1], L length of domain, S factor of 
@@ -67,8 +67,8 @@ def solve_ambplus_2D(phi_0=None, c_0=0.4, t_state=0.0, t_len = 100.0, tau = 0.01
     
     # Setup the phis for our time step with initial condition
     if phi_0 is None:
-        #phi = initial_c_0_2D(X, Y, c_0)
-        phi = initial_dot_inner_outer_2D(X, Y, r=0.3, L=L, c_0_outside=0.1, c_0_inside=0.8)
+        phi = initial_c_0_2D(X, Y, c_0, 0.0)
+        # phi = initial_dot_inner_outer_2D(X, Y, r=0.3, L=L, c_0_outside=0.1, c_0_inside=0.8)
     else:
         phi = phi_0
         if os.path.exists(log_file):
@@ -85,7 +85,7 @@ def solve_ambplus_2D(phi_0=None, c_0=0.4, t_state=0.0, t_len = 100.0, tau = 0.01
 
     # Setup time discretization
     t_N = round(t_len/tau) 
-    gaussian_scale = np.sqrt(tau)
+    gaussian_scale = np.sqrt(tau / dS)
 
     # check 10 times during iteration
     # check = int(t_N/10)
@@ -116,6 +116,7 @@ def solve_ambplus_2D(phi_0=None, c_0=0.4, t_state=0.0, t_len = 100.0, tau = 0.01
 
             start = time.time()
 
+        f_phi = pyfftw.numpy_fft.fft2(phi, norm="backward", threads=8)
         phi_3 = phi**3
 
         dphi_dx = pyfftw.numpy_fft.ifft2(1j * KX * f_phi, norm="backward", threads=8)
@@ -137,7 +138,7 @@ def solve_ambplus_2D(phi_0=None, c_0=0.4, t_state=0.0, t_len = 100.0, tau = 0.01
 
         gaussian_term = - np.sqrt(2*D*M) * 1j * (KX * white_noise_x_fft + KY * white_noise_y_fft)
 
-        f_phi = (f_phi + tau * M * non_linear_term + gaussian_scale * gaussian_term) / (1 + tau * M *(a * K_2 + eps_val * K_4))
+        f_phi = (f_phi + tau * M * non_linear_term + gaussian_scale * gaussian_term) / (1. + tau * M *(a * K_2 + eps_val * K_4))
 
         # Bookkeeping, setup for next step
         phi = pyfftw.numpy_fft.ifft2(f_phi, norm="backward", threads=8)
@@ -171,7 +172,7 @@ def main():
     np.random.seed(0)
 
     # Solve an equation
-    solve_ambplus_2D(phi_0, c_0=0.8, s_N=N, tau=0.001, t_len=400, D=0.1, zeta=2.0, lam_val=0.5, s_start=-32*np.pi, s_end=32*np.pi)
+    solve_ambplus_2D(phi_0, c_0=0.7, s_N=N, tau=0.02, t_len=800, D=0.1, zeta=4.0, lam_val=1., s_start=-16*np.pi, s_end=16*np.pi)
 
 if __name__ == "__main__":
     main()

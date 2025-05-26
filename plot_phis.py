@@ -35,6 +35,6 @@ def update(frame):
     return [im, title]
 
 # Create the animation
-ani = animation.FuncAnimation(fig, update, frames=len(k_values), interval=200, blit=False)
+ani = animation.FuncAnimation(fig, update, frames=len(k_values), interval=20, blit=False)
 ani.save("vid.gif", writer='pillow')
 plt.show()
