@@ -11,12 +11,14 @@ c_0, t_state, t_len, tau, eps_val, a, b, lam_val, zeta, D, M, s_start, s_end, s_
 log_data = np.loadtxt("log.csv", delimiter=",", skiprows=1)
 k_values = np.astype(np.unique(log_data[:, 0]), int) # List of frame indices
 t_values = np.unique(np.round(log_data[:, 1], decimals=2))
+t_values = t_values[k_values % 20000 == 0]
+k_values = k_values[k_values % 20000 == 0]
 
 fig, ax = plt.subplots()
 
 # Read the first frame to initialize the plot and colorbar
 phi0 = np.load("phi_0.npy")
-im = ax.imshow(phi0, extent=[s_start, s_end, s_start, s_end], cmap='inferno', vmin=-1, vmax=1)  # set fixed vmin/vmax if possible
+im = ax.imshow(phi0, extent=[s_start, s_end, s_start, s_end], cmap='inferno', vmin=-1.5, vmax=1.5)  # set fixed vmin/vmax if possible
 cbar = fig.colorbar(im, ax=ax)
 title = ax.set_title("Iteration = 0")
 

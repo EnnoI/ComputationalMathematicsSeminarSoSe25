@@ -6,17 +6,15 @@ import pyfftw.interfaces as pyfftw
 pyfftw.cache.enable()
 
 
-def initial_CH_tanh_2D(X, Y):
-    return np.tanh(X**2 + Y**2) + 0.05 * (2 * np.random.rand(int(np.sqrt(X.size)), int(np.sqrt(Y.size))) - 1)
 
-def initial_CH_rand_2D(X, Y):
-    return 2. * np.random.rand(int(np.sqrt(X.size)), int(np.sqrt(Y.size))) - 1.
+def initial_rand_2D(X, Y):
+    return 0.1*np.random.standard_normal(size=(int(np.sqrt(X.size)), int(np.sqrt(Y.size))))
 
 def inital_amb_seperated(X, Y):
-    base = np.ones_like(X)
-    half = X.shape[0]//2
-    base[:half, :] = -1.0
-    return 0.9*base + 0.1*initial_CH_rand_2D(X, Y)
+    base = -0.9*np.ones_like(X)
+    half = X.shape[0]//2 + 16
+    base[32:32+half, :] = 1.0
+    return 0.7*base + 0.8*initial_rand_2D(X, Y)
 
 def initial_c_0_2D(X, Y, c_0=0.5, init_noise=0.001):
     return (2.*c_0 - 1.) + init_noise*np.random.standard_normal(size=(int(np.sqrt(X.size)), int(np.sqrt(Y.size))))
@@ -24,7 +22,7 @@ def initial_c_0_2D(X, Y, c_0=0.5, init_noise=0.001):
 # We want the overall average to be c_0
 # r, c_0 in [0,1], L length of domain, S factor of 
 # how large the concentration in the circle is.
-# TODO: this does not compute an overall average of c_0
+# TODO: this does not compute an overall average of c_0 (yet?)
 def initial_dot_2D(X, Y, r, L, c_0=0.5, S=2):
     radius_mask = X**2 + Y**2 < (r*L)**2
     c_0_outside = (S*r**2 - 1.)/(r**2 - 1.) * c_0
@@ -67,7 +65,8 @@ def solve_ambplus_2D(phi_0=None, c_0=0.4, t_state=0.0, t_len = 100.0, tau = 0.01
     
     # Setup the phis for our time step with initial condition
     if phi_0 is None:
-        phi = initial_c_0_2D(X, Y, c_0, 0.0)
+        # phi = initial_c_0_2D(X, Y, c_0, 0.0)
+        phi = inital_amb_seperated(X, Y)
         # phi = initial_dot_inner_outer_2D(X, Y, r=0.3, L=L, c_0_outside=0.1, c_0_inside=0.8)
     else:
         phi = phi_0
@@ -90,7 +89,7 @@ def solve_ambplus_2D(phi_0=None, c_0=0.4, t_state=0.0, t_len = 100.0, tau = 0.01
     # check 10 times during iteration
     # check = int(t_N/10)
     # check every 2000 iterations
-    check = 2000
+    check = 20000
 
     # Setup the logging
     if not os.path.exists(log_file):
@@ -116,7 +115,6 @@ def solve_ambplus_2D(phi_0=None, c_0=0.4, t_state=0.0, t_len = 100.0, tau = 0.01
 
             start = time.time()
 
-        f_phi = pyfftw.numpy_fft.fft2(phi, norm="backward", threads=8)
         phi_3 = phi**3
 
         dphi_dx = pyfftw.numpy_fft.ifft2(1j * KX * f_phi, norm="backward", threads=8)
@@ -167,12 +165,12 @@ def main():
         N = phi_0.shape[0]
     else:
         phi_0 = None
-        N = 201
+        N = 128
 
     np.random.seed(0)
 
     # Solve an equation
-    solve_ambplus_2D(phi_0, c_0=0.7, s_N=N, tau=0.02, t_len=800, D=0.1, zeta=4.0, lam_val=1., s_start=-16*np.pi, s_end=16*np.pi)
+    solve_ambplus_2D(phi_0, c_0=0.6, s_N=N, tau=0.02, t_len=10000, D=0.0, zeta=2.25, lam_val=1.8, s_start=-64, s_end=64)
 
 if __name__ == "__main__":
     main()
