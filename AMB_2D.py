@@ -88,7 +88,7 @@ def solve_ambplus_2D(phi_0=None, c_0=0.4, t_state=0.0, t_len = 100.0, tau = 0.01
 
     # check 10 times during iteration
     # check = int(t_N/10)
-    # check every 2000 iterations
+    # check every 20000 iterations
     check = 20000
 
     # Setup the logging
