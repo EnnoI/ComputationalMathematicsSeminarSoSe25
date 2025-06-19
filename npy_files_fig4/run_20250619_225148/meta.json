@@ -1,0 +1,17 @@
+{
+    "c_0": 0.6,
+    "t_state": 0.0,
+    "t_len": 10000,
+    "tau": 0.02,
+    "eps_val": 1.0,
+    "a": -0.25,
+    "b": 0.25,
+    "lam_val": 1.8,
+    "zeta": 2.25,
+    "D": 0.0,
+    "M": 1.0,
+    "s_start": -64,
+    "s_end": 64,
+    "s_N": 128,
+    "initial_condition": "inital_amb_seperated"
+}
