@@ -66,8 +66,8 @@ def solve_ambplus_2D(phi_0=None, c_0=0.4, t_state=0.0, t_len = 100.0, tau = 0.01
     # Setup the phis for our time step with initial condition
     if phi_0 is None:
         # phi = initial_c_0_2D(X, Y, c_0, 0.0)
-        phi = inital_amb_seperated(X, Y)
-        # phi = initial_dot_inner_outer_2D(X, Y, r=0.3, L=L, c_0_outside=0.1, c_0_inside=0.8)
+        # phi = inital_amb_seperated(X, Y)
+        phi = initial_dot_inner_outer_2D(X, Y, r=0.25, L=L, c_0_outside=0.8, c_0_inside=0.2)
     else:
         phi = phi_0
         if os.path.exists(log_file):
@@ -80,7 +80,7 @@ def solve_ambplus_2D(phi_0=None, c_0=0.4, t_state=0.0, t_len = 100.0, tau = 0.01
         f.write("c_0,t_state,t_len,tau,eps_val,a,b,lam_val,zeta,D,M,s_start,s_end,s_N\n")
         f.write(f"{c_0},{t_state},{t_len},{tau},{eps_val},{a},{b},{lam_val},{zeta},{D},{M},{s_start},{s_end},{s_N}\n")
 
-    f_phi = pyfftw.numpy_fft.fft2(phi, norm="backward", threads=8)
+    f_phi = pyfftw.numpy_fft.fft2(phi, threads=8)
 
     # Setup time discretization
     t_N = round(t_len/tau) 
@@ -88,8 +88,8 @@ def solve_ambplus_2D(phi_0=None, c_0=0.4, t_state=0.0, t_len = 100.0, tau = 0.01
 
     # check 10 times during iteration
     # check = int(t_N/10)
-    # check every 20000 iterations
-    check = 20000
+    # check every 10000 iterations
+    check = 10000
 
     # Setup the logging
     if not os.path.exists(log_file):
@@ -117,29 +117,29 @@ def solve_ambplus_2D(phi_0=None, c_0=0.4, t_state=0.0, t_len = 100.0, tau = 0.01
 
         phi_3 = phi**3
 
-        dphi_dx = pyfftw.numpy_fft.ifft2(1j * KX * f_phi, norm="backward", threads=8)
-        dphi_dy = pyfftw.numpy_fft.ifft2(1j * KY * f_phi, norm="backward", threads=8)
+        dphi_dx = pyfftw.numpy_fft.ifft2(1j * KX * f_phi, threads=8)
+        dphi_dy = pyfftw.numpy_fft.ifft2(1j * KY * f_phi, threads=8)
 
-        laplacian_phi = pyfftw.numpy_fft.ifft2(-K_2 * f_phi, norm="backward", threads=8)
-        lapl_phi_prod_grad_phi_x_fft = pyfftw.numpy_fft.fft2(laplacian_phi * dphi_dx, norm="backward", threads=8)
-        lapl_phi_prod_grad_phi_y_fft = pyfftw.numpy_fft.fft2(laplacian_phi * dphi_dy, norm="backward", threads=8)
+        laplacian_phi = pyfftw.numpy_fft.ifft2(-K_2 * f_phi, threads=8)
+        lapl_phi_prod_grad_phi_x_fft = pyfftw.numpy_fft.fft2(laplacian_phi * dphi_dx, threads=8)
+        lapl_phi_prod_grad_phi_y_fft = pyfftw.numpy_fft.fft2(laplacian_phi * dphi_dy, threads=8)
 
         grad_phi_2 = dphi_dx**2 + dphi_dy**2
 
-        non_linear_term = - K_2 * pyfftw.numpy_fft.fft2(b * phi_3 + lam_val * grad_phi_2, norm="backward", threads=8) - 1j * zeta * (KX * lapl_phi_prod_grad_phi_x_fft + KY * lapl_phi_prod_grad_phi_y_fft)
+        non_linear_term = - K_2 * pyfftw.numpy_fft.fft2(b * phi_3 + lam_val * grad_phi_2, threads=8) - 1j * zeta * (KX * lapl_phi_prod_grad_phi_x_fft + KY * lapl_phi_prod_grad_phi_y_fft)
         
         # Dealiasing the nonlinear term may improve stability
-        non_linear_term *= dealiasing_mask
+        # non_linear_term *= dealiasing_mask
 
-        white_noise_x_fft = pyfftw.numpy_fft.fft2(np.random.standard_normal(size=KX.shape), norm="backward", threads=8)
-        white_noise_y_fft = pyfftw.numpy_fft.fft2(np.random.standard_normal(size=KY.shape), norm="backward", threads=8)
+        white_noise_x_fft = pyfftw.numpy_fft.fft2(np.random.standard_normal(size=KX.shape), threads=8)
+        white_noise_y_fft = pyfftw.numpy_fft.fft2(np.random.standard_normal(size=KY.shape), threads=8)
 
         gaussian_term = - np.sqrt(2*D*M) * 1j * (KX * white_noise_x_fft + KY * white_noise_y_fft)
 
         f_phi = (f_phi + tau * M * non_linear_term + gaussian_scale * gaussian_term) / (1. + tau * M *(a * K_2 + eps_val * K_4))
 
         # Bookkeeping, setup for next step
-        phi = pyfftw.numpy_fft.ifft2(f_phi, norm="backward", threads=8)
+        phi = pyfftw.numpy_fft.ifft2(f_phi, threads=8)
         t_state += tau
 
     # print one last time
@@ -165,12 +165,12 @@ def main():
         N = phi_0.shape[0]
     else:
         phi_0 = None
-        N = 128
+        N = 400
 
-    np.random.seed(0)
+    #np.random.seed(0)
 
     # Solve an equation
-    solve_ambplus_2D(phi_0, c_0=0.6, s_N=N, tau=0.02, t_len=10000, D=0.0, zeta=2.25, lam_val=1.8, s_start=-64, s_end=64)
+    solve_ambplus_2D(phi_0, c_0=0.6, s_N=N, tau=0.02, t_len=26400, D=0.03, zeta=2.25, lam_val=1.8, s_start=-200, s_end=200)
 
 if __name__ == "__main__":
     main()

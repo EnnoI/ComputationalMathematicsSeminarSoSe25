@@ -11,8 +11,8 @@ c_0, t_state, t_len, tau, eps_val, a, b, lam_val, zeta, D, M, s_start, s_end, s_
 log_data = np.loadtxt("log.csv", delimiter=",", skiprows=1)
 k_values = np.astype(np.unique(log_data[:, 0]), int) # List of frame indices
 t_values = np.unique(np.round(log_data[:, 1], decimals=2))
-t_values = t_values[k_values % 20000 == 0]
-k_values = k_values[k_values % 20000 == 0]
+t_values = t_values[k_values % 10000 == 0]
+k_values = k_values[k_values % 10000 == 0]
 
 fig, ax = plt.subplots()
 
@@ -37,6 +37,7 @@ def update(frame):
     return [im, title]
 
 # Create the animation
-ani = animation.FuncAnimation(fig, update, frames=len(k_values), interval=20, blit=False)
+ani = animation.FuncAnimation(fig, update, frames=len(k_values), interval=40, blit=False)
+#FFwriter = animation.FFMpegWriter(fps=10)
 ani.save("vid.gif", writer='pillow')
 plt.show()
