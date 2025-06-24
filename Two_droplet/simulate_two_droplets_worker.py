@@ -17,8 +17,8 @@ N = 128
 L = 128.0
 dx = L / N
 dt = 0.0025
-steps = int(2000 / dt)
-save_interval = 100
+steps = int(200 / dt)
+save_interval = 2000
 
 A, B, K = 1.0, 1.0, 1.0
 sep = 30  # x-offset of droplets
@@ -48,7 +48,7 @@ phi = initialize_two_droplets()
 f_phi = fft(phi)
 
 # --- Setup output ---
-out_dir = f"runs/{tag}"
+out_dir = f"full_simulation/{tag}"
 os.makedirs(out_dir, exist_ok=True)
 log_path = f"{out_dir}/radii_log.csv"
 with open(log_path, "w") as log:
@@ -110,11 +110,13 @@ for step in range(steps + 1):
     dfdt = np.clip(dfdt, -1e4, 1e4)
     dfdt *= dealias
     f_phi += dt * dfdt
+    
 
 # --- Region classification ---
 arr = np.array(radii_history)
 if len(arr) == 0:
     region = "Undetermined"
+    growL = growR = 0.0
 else:
     growL = arr[-1, 0] - arr[0, 0]
     growR = arr[-1, 1] - arr[0, 1]
@@ -126,7 +128,8 @@ else:
         region = "C"
     else:
         region = "Undetermined"
-
+print(f"ΔRL = {growL:.3f}, ΔRR = {growR:.3f}")
 with open(f"{out_dir}/region.txt", "w") as f:
     f.write(region + "\n")
 print(f"Done: λ={lam}, ζ={zeta} → Region {region}")
+
