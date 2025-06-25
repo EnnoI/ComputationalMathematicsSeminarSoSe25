@@ -16,11 +16,11 @@ tag = f"lam{lam}_zeta{zeta}"
 N = 128
 L = 128.0
 dx = L / N
-dt = 0.0025
-steps = int(200 / dt)
+dt = 0.05
+steps = int(2000 / dt)
 save_interval = 2000
 
-A, B, K = 1.0, 1.0, 1.0
+A, B, K = -0.25, 0.1, 1.0
 sep = 30  # x-offset of droplets
 
 x = np.linspace(-L / 2, L / 2, N, endpoint=False)
