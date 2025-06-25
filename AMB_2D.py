@@ -179,7 +179,7 @@ def main():
     #np.random.seed(0)
 
     # Solve an equation
-    solve_ambplus_2D(phi_0, c_0=0.6, s_N=N, tau=0.02, t_len=3000, D=0.0, zeta=2, lam_val=0.75, s_start=-64, s_end=64)
+    solve_ambplus_2D(phi_0, c_0=0.6, s_N=N, tau=0.02, t_len=15000, D=0.0, zeta=2, lam_val=1.75, s_start=-64, s_end=64)
 
 if __name__ == "__main__":
     main()
