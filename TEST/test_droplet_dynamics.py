@@ -1,19 +1,27 @@
 import numpy as np
-import matplotlib.pyplot as plt
-from scipy.ndimage import label, sum as ndi_sum
+from scipy.ndimage import label, sum as ndi_sum, center_of_mass
 import os
+import sys
 
-# --- Parameters ---
+# --- Parse command-line args ---
+if len(sys.argv) != 3:
+    print("Usage: python simulate_two_droplets_worker_flipped.py <lambda> <zeta>")
+    sys.exit(1)
+
+lam = float(sys.argv[1])
+zeta = float(sys.argv[2])
+tag = f"lam{lam}_zeta{zeta}"
+
+# --- Simulation parameters ---
 N = 128
 L = 128.0
 dx = L / N
 dt = 0.0025
 steps = int(200 / dt)
-snapshot_interval = 2000
+save_interval = 2000
 
-A, Bc, K = 1.0, 1.0, 1.0
-lam = -1.0   # Try region B: λ = -1, ζ = -4
-zeta = -4.0
+A, B, K = 1.0, 1.0, 1.0
+sep = 30  # droplet offset
 
 x = np.linspace(-L/2, L/2, N, endpoint=False)
 y = np.linspace(-L/2, L/2, N, endpoint=False)
@@ -28,30 +36,64 @@ dealias = K2 < (0.67 * K2.max())
 fft = np.fft.fft2
 ifft = lambda f: np.fft.ifft2(f).real
 
-# --- Initialize a single small droplet ---
-phi = -0.9 * np.ones((N, N))
-R = 8
-phi[X**2 + Y**2 < R**2] = -1.0
-phi += 0.01 * np.random.randn(*phi.shape)
+# --- Flipped initialization: NEGATIVE droplets in POSITIVE background ---
+def initialize_two_droplets(R1=10, R2=6):
+    phi = 0.9 * np.ones((N, N))
+    phi[(X + sep)**2 + Y**2 < R1**2] = -1.0
+    phi[(X - sep)**2 + Y**2 < R2**2] = -1.0
+    phi += 0.01 * np.random.randn(*phi.shape)
+    return phi
+
+phi = initialize_two_droplets()
 f_phi = fft(phi)
 
-radii = []
+# --- Output setup ---
+out_dir = f"TEST_radiis/{tag}"
+os.makedirs(out_dir, exist_ok=True)
+log_path = f"{out_dir}/radii_log.csv"
 
-# --- Run ---
+with open(log_path, "w") as log:
+    log.write("time,radius_left,radius_right,num_blobs,max_phi,min_phi\n")
+
+radii_history = []
+
+# --- Time evolution loop ---
 for step in range(steps + 1):
     phi = ifft(f_phi)
     phi = np.clip(phi, -2.0, 2.0)
 
-    # Measure radius every few steps
-    if step % snapshot_interval == 0:
-        binary = (phi > 0.05).astype(int)
+    if not np.isfinite(phi).all():
+        print(f"NaN detected at step {step}. Aborting.")
+        break
+
+    if step % save_interval == 0:
+        binary = (phi < -0.05).astype(int)  # NEGATIVE droplets
         labeled, num = label(binary)
         areas = ndi_sum(binary, labeled, index=range(1, num + 1))
-        if len(areas) > 0:
-            r = np.sqrt(areas[0] / np.pi)
-        else:
-            r = 0
-        radii.append(r)
+        COMs = center_of_mass(binary, labeled, index=range(1, num + 1))
+
+        blob_data = [(a, com) for a, com in zip(areas, COMs) if a > 10]
+        r_left = r_right = 0.0
+
+        if len(blob_data) == 1:
+            x_pos = x[int(round(blob_data[0][1][0]))]
+            r = np.sqrt(blob_data[0][0] / np.pi)
+            if x_pos < 0:
+                r_left = r
+            else:
+                r_right = r
+        elif len(blob_data) >= 2:
+            blob_data.sort(key=lambda b: x[int(round(b[1][0]))])
+            r_left = np.sqrt(blob_data[0][0] / np.pi)
+            r_right = np.sqrt(blob_data[1][0] / np.pi)
+
+        t_now = step * dt
+        with open(log_path, "a") as log:
+            log.write(f"{t_now:.2f},{r_left:.4f},{r_right:.4f},{len(blob_data)},{phi.max():.2e},{phi.min():.2e}\n")
+        np.save(f"{out_dir}/phi_t{step:05d}.npy", phi)
+        print(f"[{t_now:.1f}] RL={r_left:.2f}, RR={r_right:.2f}, n={len(blob_data)}, φmax={phi.max():.2f}")
+
+        radii_history.append((r_left, r_right))
 
     # Dynamics
     dphi_dx = np.clip(ifft(1j * KX * f_phi), -10, 10)
@@ -59,7 +101,8 @@ for step in range(steps + 1):
     grad_phi2 = np.clip(dphi_dx**2 + dphi_dy**2, 0, 100)
 
     lap_phi = ifft(-K2 * f_phi)
-    mu = -A * phi + Bc * phi**3 - K * lap_phi + lam * grad_phi2
+    phi3 = np.clip(phi, -2.0, 2.0) ** 3
+    mu = -A * phi + B * phi3 - K * lap_phi + lam * grad_phi2
     f_mu = fft(mu)
 
     lap_phi_fx = fft(np.clip(lap_phi * dphi_dx, -1e2, 1e2))
@@ -71,11 +114,24 @@ for step in range(steps + 1):
     dfdt *= dealias
     f_phi += dt * dfdt
 
-# --- Plotting radius over time ---
-plt.plot(np.linspace(0, 200, len(radii)), radii, marker='o')
-plt.xlabel("Time")
-plt.ylabel("Droplet Radius")
-plt.title(f"λ={lam}, ζ={zeta} — Radius Evolution")
-plt.grid(True)
-plt.tight_layout()
-plt.show()
+# --- Final classification (optional) ---
+arr = np.array(radii_history)
+if len(arr) == 0:
+    region = "Undetermined"
+    growL = growR = 0.0
+else:
+    growL = arr[-1, 0] - arr[0, 0]
+    growR = arr[-1, 1] - arr[0, 1]
+    if growL > 0.2 and growR < -0.2:
+        region = "A"
+    elif growR > 0.2 and growL < -0.2:
+        region = "B"
+    elif growL > 0.2 and growR > 0.2:
+        region = "C"
+    else:
+        region = "Undetermined"
+
+with open(f"{out_dir}/region.txt", "w") as f:
+    f.write(region + "\n")
+
+print(f"Done: λ={lam}, ζ={zeta} → Region {region}")
