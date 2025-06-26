@@ -76,7 +76,7 @@ def solve_ambplus_2D(phi_0=None, c_0=0.4, t_state=0.0, t_len = 100.0, tau = 0.01
         # phi = initial_c_0_2D(X, Y, c_0, 0.0)
         # phi = inital_amb_seperated(X, Y)
         # phi = initial_dot_inner_outer_2D(X, Y, r=0.25, L=L, c_0_outside=0.8, c_0_inside=0.2)
-        phi = initial_two_dots(X, Y, 0.25, 0.1, (0.0, -22.0), (0.0, 28.0), L)
+        phi = initial_two_dots(X, Y, 0.25, 0.1, (0.0, -32.0), (0.0, 32.0), L)
     else:
         phi = phi_0
         if os.path.exists(log_file):
@@ -179,7 +179,7 @@ def main():
     #np.random.seed(0)
 
     # Solve an equation
-    solve_ambplus_2D(phi_0, c_0=0.6, s_N=N, tau=0.02, t_len=3000, D=0.0, lam_val= 0.75 , zeta= 2.0 , s_start=-64, s_end=64)
+    solve_ambplus_2D(phi_0, c_0=0.6, s_N=N, tau=0.02, t_len=30000, D=0.0, lam_val= 0.75 , zeta= 2.0 , s_start=-64, s_end=64)
 
 if __name__ == "__main__":
     main()
