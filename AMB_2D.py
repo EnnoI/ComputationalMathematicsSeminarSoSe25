@@ -46,7 +46,7 @@ def initial_two_dots(X, Y, R1, R2, x1, x2, L):
     return base
 
 
-def solve_ambplus_2D(phi_0=None, c_0=0.4, t_state=0.0, t_len = 100.0, tau = 0.01, eps_val=1., a=-0.25, b=0.25, lam_val=01.75 , zeta= 3.0 , D=0.05, M=1., s_start = -32.*np.pi, s_end = 32.*np.pi, s_N = 200):
+def solve_ambplus_2D(phi_0=None, c_0=0.4, t_state=0.0, t_len = 100.0, tau = 0.01, eps_val=1., a=-0.25, b=0.25, lam_val=0.75 , zeta= 2.0 , D=0.05, M=1., s_start = -32.*np.pi, s_end = 32.*np.pi, s_N = 200):
     
     log_file = "log.csv"
     prev_iter = 0
@@ -76,7 +76,7 @@ def solve_ambplus_2D(phi_0=None, c_0=0.4, t_state=0.0, t_len = 100.0, tau = 0.01
         # phi = initial_c_0_2D(X, Y, c_0, 0.0)
         # phi = inital_amb_seperated(X, Y)
         # phi = initial_dot_inner_outer_2D(X, Y, r=0.25, L=L, c_0_outside=0.8, c_0_inside=0.2)
-        phi = initial_two_dots(X, Y, 0.3, 0.05, (0.0, -22.0), (0.0, 28.0), L)
+        phi = initial_two_dots(X, Y, 0.25, 0.1, (0.0, -22.0), (0.0, 28.0), L)
     else:
         phi = phi_0
         if os.path.exists(log_file):
@@ -86,7 +86,7 @@ def solve_ambplus_2D(phi_0=None, c_0=0.4, t_state=0.0, t_len = 100.0, tau = 0.01
 
     # log the parameters used:
     with open("parameters.csv", 'w') as f:
-        f.write("c_0,t_state,t_len,tau,eps_val,a,b,lam_val,zeta,D,M,s_start,s_end,s_N\n")
+        f.write("c_0,t_state,t_len,tau,eps_val,a,b,lam_val,zeta, R1, R2,D,M,s_start,s_end,s_N\n")
         f.write(f"{c_0},{t_state},{t_len},{tau},{eps_val},{a},{b},{lam_val},{zeta},{D},{M},{s_start},{s_end},{s_N}\n")
 
     f_phi = pyfftw.numpy_fft.fft2(phi, threads=8)
@@ -179,7 +179,7 @@ def main():
     #np.random.seed(0)
 
     # Solve an equation
-    solve_ambplus_2D(phi_0, c_0=0.6, s_N=N, tau=0.02, t_len=15000, D=0.0, lam_val= 1.75 , zeta= 3.0 , s_start=-64, s_end=64)
+    solve_ambplus_2D(phi_0, c_0=0.6, s_N=N, tau=0.02, t_len=15000, D=0.0, lam_val= 0.75 , zeta= 2.0 , s_start=-64, s_end=64)
 
 if __name__ == "__main__":
     main()
