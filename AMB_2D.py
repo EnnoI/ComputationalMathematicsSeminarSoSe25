@@ -46,7 +46,7 @@ def initial_two_dots(X, Y, R1, R2, x1, x2, L):
     return base
 
 
-def solve_ambplus_2D(phi_0=None, c_0=0.4, t_state=0.0, t_len = 100.0, tau = 0.01, eps_val=1., a=-0.25, b=0.25, lam_val=1.75, zeta=2.0, D=0.05, M=1., s_start = -32.*np.pi, s_end = 32.*np.pi, s_N = 200):
+def solve_ambplus_2D(phi_0=None, c_0=0.4, t_state=0.0, t_len = 100.0, tau = 0.01, eps_val=1., a=-0.25, b=0.25, lam_val=0.75 , zeta= 2.0 , D=0.05, M=1., s_start = -32.*np.pi, s_end = 32.*np.pi, s_N = 200):
     
     log_file = "log.csv"
     prev_iter = 0
@@ -93,7 +93,7 @@ def solve_ambplus_2D(phi_0=None, c_0=0.4, t_state=0.0, t_len = 100.0, tau = 0.01
 
     # log the parameters used:
     with open("parameters.csv", 'w') as f:
-        f.write("c_0,t_state,t_len,tau,eps_val,a,b,lam_val,zeta,D,M,s_start,s_end,s_N\n")
+        f.write("c_0,t_state,t_len,tau,eps_val,a,b,lam_val,zeta, R1, R2,D,M,s_start,s_end,s_N\n")
         f.write(f"{c_0},{t_state},{t_len},{tau},{eps_val},{a},{b},{lam_val},{zeta},{D},{M},{s_start},{s_end},{s_N}\n")
 
     f_phi = pyfftw.numpy_fft.fft2(phi, threads=8)
