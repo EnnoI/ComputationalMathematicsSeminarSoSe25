@@ -63,20 +63,27 @@ def solve_ambplus_2D(phi_0=None, c_0=0.4, t_state=0.0, t_len = 100.0, tau = 0.01
     K_4 = K_2**2
 
     # Create a dealisiasing mask
-    K_cutoff = 0.67 * K_2.max()
-    dealiasing_mask = K_2 < K_cutoff**2
+    kx_max = np.abs(kx).max()
+    ky_max = np.abs(ky).max()
+    kx_cutoff = (2./3.) * kx_max
+    ky_cutoff = (2./3.) * ky_max
+    dealiasing_mask = np.logical_and(np.abs(KX) < kx_cutoff, np.abs(KY) < ky_cutoff)
+
+    # K_cutoff = 0.67 * np.sqrt(K_2).max()
+    # dealiasing_mask = K_2 < K_cutoff**2
 
     #KXKY = KX * KY
     dx = abs(X[1][0] - X[0][0])
     dy = abs(Y[0][1] - Y[0][0])
+    print(dx, dy)
     dS = dx*dy
     
     # Setup the phis for our time step with initial condition
     if phi_0 is None:
-        # phi = initial_c_0_2D(X, Y, c_0, 0.0)
+        phi = initial_c_0_2D(X, Y, c_0, 0.0)
         # phi = inital_amb_seperated(X, Y)
-        # phi = initial_dot_inner_outer_2D(X, Y, r=0.25, L=L, c_0_outside=0.8, c_0_inside=0.2)
-        phi = initial_two_dots(X, Y, 0.25, 0.1, (0.0, -22.0), (0.0, 28.0), L)
+        # phi = initial_dot_inner_outer_2D(X, Y, r=0.25, L=L, c_0_outside=0.9, c_0_inside=0.15)
+        # phi = initial_two_dots(X, Y, 0.2, 0.1, (0.0, -22.0), (0.0, 28.0), L)
     else:
         phi = phi_0
         if os.path.exists(log_file):
@@ -146,6 +153,7 @@ def solve_ambplus_2D(phi_0=None, c_0=0.4, t_state=0.0, t_len = 100.0, tau = 0.01
         gaussian_term = - np.sqrt(2*D*M) * 1j * (KX * white_noise_x_fft + KY * white_noise_y_fft)
 
         f_phi = (f_phi + tau * M * non_linear_term + gaussian_scale * gaussian_term) / (1. + tau * M *(a * K_2 + eps_val * K_4))
+        # f_phi += tau * ( M * non_linear_term - M *(a * K_2 + eps_val * K_4) * f_phi) + gaussian_scale * gaussian_term # explicit euler
 
         # Bookkeeping, setup for next step
         phi = pyfftw.numpy_fft.ifft2(f_phi, threads=8)
@@ -174,12 +182,12 @@ def main():
         N = phi_0.shape[0]
     else:
         phi_0 = None
-        N = 128
+        N = 400
 
     #np.random.seed(0)
 
     # Solve an equation
-    solve_ambplus_2D(phi_0, c_0=0.6, s_N=N, tau=0.02, t_len=3000, D=0.0, zeta=2, lam_val=0.75, s_start=-64, s_end=64)
+    solve_ambplus_2D(phi_0, c_0=0.3, s_N=N, tau=0.02, t_len=3000, D=0.05, zeta=2., lam_val=1.75, s_start=-200, s_end=200)
 
 if __name__ == "__main__":
     main()
