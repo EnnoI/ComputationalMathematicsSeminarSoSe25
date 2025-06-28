@@ -182,12 +182,12 @@ def main():
         N = phi_0.shape[0]
     else:
         phi_0 = None
-        N = 400
+        N = 200
 
     #np.random.seed(0)
 
     # Solve an equation
-    solve_ambplus_2D(phi_0, c_0=0.3, s_N=N, tau=0.02, t_len=3000, D=0.05, zeta=2., lam_val=1.75, s_start=-200, s_end=200)
+    solve_ambplus_2D(phi_0, c_0=0.3, s_N=N, tau=0.02, t_len=3000, D=0.05, zeta=2., lam_val=1.75, s_start=-100, s_end=100)
 
 if __name__ == "__main__":
     main()
