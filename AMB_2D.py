@@ -38,7 +38,7 @@ def initial_dot_inner_outer_2D(X, Y, r, L, c_0_outside, c_0_inside):
     return base
 
 
-def solve_ambplus_2D(phi_0=None, c_0=0.4, t_state=0.0, t_len = 100.0, tau = 0.01, eps_val=1., a=-0.25, b=0.25, lam_val=1.75, zeta=2.0, D=0.05, M=1., s_start = -32.*np.pi, s_end = 32.*np.pi, s_N = 200):
+def solve_ambplus_2D(phi_0=None, c_0=0.4, t_state=0.0, t_len = 100.0, tau = 0.01, eps_val=1., a=-0.25, b=0.25, lam_val=1.8, zeta=2.25, D=0.05, M=1., s_start = -32.*np.pi, s_end = 32.*np.pi, s_N = 200):
     
     log_file = "log.csv"
     prev_iter = 0
