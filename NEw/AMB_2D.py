@@ -82,8 +82,8 @@ def solve_ambplus_2D(phi_0=None, c_0=0.4, t_state=0.0, t_len = 100.0, tau = 0.01
     if phi_0 is None:
         # phi = initial_c_0_2D(X, Y, c_0, 0.0)
         # phi = inital_amb_seperated(X, Y)
-        #phi = initial_dot_inner_outer_2D(X, Y, r=0.3, L=L, c_0_outside=0.1, c_0_inside=0.9)
-        phi = initial_two_dots(X, Y, 0.2, 0.1, (0.0, -32.0), (0.0, 22.0), L)
+        phi = initial_dot_inner_outer_2D(X, Y, r=0.3, L=L, c_0_outside=0.1, c_0_inside=0.9)
+        # phi = initial_two_dots(X, Y, 0.2, 0.1, (0.0, -22.0), (0.0, 28.0), L)
     else:
         phi = phi_0
         if os.path.exists(log_file):
@@ -105,7 +105,7 @@ def solve_ambplus_2D(phi_0=None, c_0=0.4, t_state=0.0, t_len = 100.0, tau = 0.01
     # check 10 times during iteration
     # check = int(t_N/10)
     # check every 10000 iterations
-    check = 10000
+    check = 100
 
     # Setup the logging
     if not os.path.exists(log_file):
@@ -145,7 +145,7 @@ def solve_ambplus_2D(phi_0=None, c_0=0.4, t_state=0.0, t_len = 100.0, tau = 0.01
         non_linear_term = - K_2 * pyfftw.numpy_fft.fft2(b * phi_3 + lam_val * grad_phi_2, threads=8) - 1j * zeta * (KX * lapl_phi_prod_grad_phi_x_fft + KY * lapl_phi_prod_grad_phi_y_fft)
         
         # Dealiasing the nonlinear term may improve stability
-        #non_linear_term *= dealiasing_mask
+        non_linear_term *= dealiasing_mask
 
         white_noise_x_fft = pyfftw.numpy_fft.fft2(np.random.standard_normal(size=KX.shape), threads=8)
         white_noise_y_fft = pyfftw.numpy_fft.fft2(np.random.standard_normal(size=KY.shape), threads=8)
@@ -187,7 +187,7 @@ def main():
     #np.random.seed(0)
 
     # Solve an equation
-    solve_ambplus_2D(phi_0, c_0=0.3, s_N=N, tau=0.02, t_len=1200, D=0.2, zeta=2.25, lam_val=1.8, s_start=-100, s_end=100)
+    solve_ambplus_2D(phi_0, c_0=0.3, s_N=N, tau=0.02, t_len=1200, D=0.2, zeta=2.5, lam_val=1.0, s_start=-100, s_end=100)
 
 if __name__ == "__main__":
     main()
