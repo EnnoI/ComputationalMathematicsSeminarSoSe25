@@ -93,7 +93,7 @@ def solve_ambplus_2D(phi_0=None, c_0=0.4, t_state=0.0, t_len = 100.0, tau = 0.01
 
     # log the parameters used:
     with open("parameters.csv", 'w') as f:
-        f.write("c_0,t_state,t_len,tau,eps_val,a,b,lam_val,zeta, R1, R2,D,M,s_start,s_end,s_N\n")
+        f.write("c_0,t_state,t_len,tau,eps_val,a,b,lam_val,zeta,D,M,s_start,s_end,s_N\n")
         f.write(f"{c_0},{t_state},{t_len},{tau},{eps_val},{a},{b},{lam_val},{zeta},{D},{M},{s_start},{s_end},{s_N}\n")
 
     f_phi = pyfftw.numpy_fft.fft2(phi, threads=8)
@@ -187,7 +187,7 @@ def main():
     #np.random.seed(0)
 
     # Solve an equation
-    solve_ambplus_2D(phi_0, c_0=0.3, s_N=N, tau=0.02, t_len=3000, D=0.05, zeta=2., lam_val=1.75, s_start=-100, s_end=100)
+    solve_ambplus_2D(phi_0, c_0=0.3, s_N=N, tau=0.02, t_len=1200, D=0.05, zeta=2., lam_val=1.75, s_start=-100, s_end=100)
 
 if __name__ == "__main__":
     main()
