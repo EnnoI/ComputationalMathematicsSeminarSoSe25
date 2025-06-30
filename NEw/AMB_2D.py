@@ -153,7 +153,7 @@ def solve_ambplus_2D(phi_0=None, c_0=0.6, t_state=0.0, t_len = 100.0, tau = 0.01
         gaussian_term = - np.sqrt(2*D*M) * 1j * (KX * white_noise_x_fft + KY * white_noise_y_fft)
 
         f_phi = (f_phi + tau * M * non_linear_term + gaussian_scale * gaussian_term) / (1. + tau * M *(a * K_2 + eps_val * K_4))
-        # f_phi += tau * ( M * non_linear_term - M *(a * K_2 + eps_val * K_4) * f_phi) + gaussian_scale * gaussian_term # explicit euler
+        f_phi += tau * ( M * non_linear_term - M *(a * K_2 + eps_val * K_4) * f_phi) + gaussian_scale * gaussian_term # explicit euler
 
         # Bookkeeping, setup for next step
         phi = pyfftw.numpy_fft.ifft2(f_phi, threads=8)
