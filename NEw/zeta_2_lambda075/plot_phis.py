@@ -38,3 +38,4 @@ ani = animation.FuncAnimation(fig, update, frames=len(k_values), interval=25, bl
 #FFwriter = animation.FFMpegWriter(fps=10)
 ani.save("vid.gif", writer='pillow')
 plt.show()
+print(frames)

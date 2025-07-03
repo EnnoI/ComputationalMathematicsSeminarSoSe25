@@ -13,6 +13,7 @@ def main():
 
         try:
             phi = np.load(filename)
+            print(filename)
         except Exception as e:
             print(f"Error reading file: {e}")
             sys.exit(1)
