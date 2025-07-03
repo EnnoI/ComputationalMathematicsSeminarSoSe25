@@ -53,7 +53,7 @@ def initial_two_dots_reverse(X, Y, R1, R2, x1, x2, L):
     base[radius_mask2] = 1.
     return base
 
-def solve_ambplus_2D(phi_0=None, c_0=0.4, t_state=0.0, t_len = 100.0, tau = 0.01, eps_val=1., a=-0.25, b=0.25, zeta=-2, lam_val=-.75 , D=0.05, M=1., s_start = -32.*np.pi, s_end = 32.*np.pi, s_N = 200):
+def solve_ambplus_2D(phi_0=None, c_0=0.4, t_state=0.0, t_len = 100.0, tau = 0.01, eps_val=1., a=-0.25, b=0.25, zeta=1, lam_val=-0.5 , D=0.05, M=1., s_start = -32.*np.pi, s_end = 32.*np.pi, s_N = 200):
     
     log_file = "log.csv"
     prev_iter = 0
@@ -91,7 +91,7 @@ def solve_ambplus_2D(phi_0=None, c_0=0.4, t_state=0.0, t_len = 100.0, tau = 0.01
         # phi = inital_amb_seperated(X, Y)
         # phi = initial_dot_inner_outer_2D(X, Y, r=0.3, L=L, c_0_outside=0.1, c_0_inside=0.9)
         # phi = initial_two_dots(X, Y, 0.2, 0.1, (0.0, -22.0), (0.0, 28.0), L)
-        phi = initial_two_dots_reverse(X, Y, 0.25, 0.1, (0.0, -32.0), (0.0, 32.0), L)
+        phi = initial_two_dots_reverse(X, Y, 0.2, 0.1, (0.0, -30.0), (0.0, 30.0), L)
     else:
         phi = phi_0
         if os.path.exists(log_file):
@@ -195,7 +195,7 @@ def main():
     #np.random.seed(0)
 
     # Solve an equation
-    solve_ambplus_2D(phi_0, c_0=0.3, s_N=N, tau=0.02, t_len=1950000, D=0.0, zeta=-2, lam_val=-.75, s_start=-64, s_end=64)
+    solve_ambplus_2D(phi_0, c_0=0.3, s_N=N, tau=0.02, t_len=1950000, D=0.0, zeta=1, lam_val=-0.5, s_start=-64, s_end=64)
 
 if __name__ == "__main__":
     main()
