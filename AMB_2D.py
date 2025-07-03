@@ -113,7 +113,7 @@ def solve_ambplus_2D(phi_0=None, c_0=0.4, t_state=0.0, t_len = 100.0, tau = 0.01
     # check 10 times during iteration
     # check = int(t_N/10)
     # check every 10000 iterations
-    check = 10000
+    check = 1000
 
     # Setup the logging
     if not os.path.exists(log_file):
@@ -190,12 +190,12 @@ def main():
         N = phi_0.shape[0]
     else:
         phi_0 = None
-        N = 128
+        N = 200
 
     #np.random.seed(0)
 
     # Solve an equation
-    solve_ambplus_2D(phi_0, c_0=0.3, s_N=N, tau=0.1, t_len=100000, D=0.0, zeta=-1.0, lam_val=-.5, s_start=-64, s_end=64)
+    solve_ambplus_2D(phi_0, c_0=0.3, s_N=N, tau=0.02, t_len=100000, D=0.2, zeta=2.5, lam_val=1.0, s_start=-100, s_end=100)
 
 if __name__ == "__main__":
     main()
