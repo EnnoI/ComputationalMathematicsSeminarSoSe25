@@ -45,8 +45,15 @@ def initial_two_dots(X, Y, R1, R2, x1, x2, L):
     base[radius_mask2] = -1.
     return base
 
+def initial_two_dots_reverse(X, Y, R1, R2, x1, x2, L):
+    base = initial_c_0_2D(X, Y, c_0=0.)
+    radius_mask1 = (X - x1[0])**2 + (Y - x1[1])**2 < (R1*L)**2
+    base[radius_mask1] = 1.
+    radius_mask2 = (X - x2[0])**2 + (Y - x2[1])**2 < (R2*L)**2
+    base[radius_mask2] = 1.
+    return base
 
-def solve_ambplus_2D(phi_0=None, c_0=0.4, t_state=0.0, t_len = 100.0, tau = 0.01, eps_val=1., a=-0.25, b=0.25, lam_val=-0.75, zeta= -2.0 , D=0.05, M=1., s_start = -32.*np.pi, s_end = 32.*np.pi, s_N = 200):
+def solve_ambplus_2D(phi_0=None, c_0=0.4, t_state=0.0, t_len = 100.0, tau = 0.01, eps_val=1., a=-0.25, b=0.25, lam_val=0.75 , zeta= 2.0 , D=0.05, M=1., s_start = -32.*np.pi, s_end = 32.*np.pi, s_N = 200):
     
     log_file = "log.csv"
     prev_iter = 0
@@ -63,20 +70,28 @@ def solve_ambplus_2D(phi_0=None, c_0=0.4, t_state=0.0, t_len = 100.0, tau = 0.01
     K_4 = K_2**2
 
     # Create a dealisiasing mask
-    K_cutoff = 0.67 * K_2.max()
-    dealiasing_mask = K_2 < K_cutoff**2
+    kx_max = np.abs(kx).max()
+    ky_max = np.abs(ky).max()
+    kx_cutoff = (2./3.) * kx_max
+    ky_cutoff = (2./3.) * ky_max
+    dealiasing_mask = np.logical_and(np.abs(KX) < kx_cutoff, np.abs(KY) < ky_cutoff)
+
+    # K_cutoff = 0.67 * np.sqrt(K_2).max()
+    # dealiasing_mask = K_2 < K_cutoff**2
 
     #KXKY = KX * KY
     dx = abs(X[1][0] - X[0][0])
     dy = abs(Y[0][1] - Y[0][0])
+    print(dx, dy)
     dS = dx*dy
     
     # Setup the phis for our time step with initial condition
     if phi_0 is None:
         # phi = initial_c_0_2D(X, Y, c_0, 0.0)
         # phi = inital_amb_seperated(X, Y)
-        # phi = initial_dot_inner_outer_2D(X, Y, r=0.25, L=L, c_0_outside=0.8, c_0_inside=0.2)
-        phi = initial_two_dots(X, Y, 0.25, 0.1, (0.0, -32.0), (0.0, 32.0), L)
+        # phi = initial_dot_inner_outer_2D(X, Y, r=0.3, L=L, c_0_outside=0.1, c_0_inside=0.9)
+        # phi = initial_two_dots(X, Y, 0.2, 0.1, (0.0, -22.0), (0.0, 28.0), L)
+        phi = initial_two_dots_reverse(X, Y, 0.25, 0.1, (0.0, -32.0), (0.0, 32.0), L)
     else:
         phi = phi_0
         if os.path.exists(log_file):
@@ -86,7 +101,7 @@ def solve_ambplus_2D(phi_0=None, c_0=0.4, t_state=0.0, t_len = 100.0, tau = 0.01
 
     # log the parameters used:
     with open("parameters.csv", 'w') as f:
-        f.write("c_0,t_state,t_len,tau,eps_val,a,b,lam_val,zeta, R1, R2,D,M,s_start,s_end,s_N\n")
+        f.write("c_0,t_state,t_len,tau,eps_val,a,b,lam_val,zeta,D,M,s_start,s_end,s_N\n")
         f.write(f"{c_0},{t_state},{t_len},{tau},{eps_val},{a},{b},{lam_val},{zeta},{D},{M},{s_start},{s_end},{s_N}\n")
 
     f_phi = pyfftw.numpy_fft.fft2(phi, threads=8)
@@ -138,7 +153,7 @@ def solve_ambplus_2D(phi_0=None, c_0=0.4, t_state=0.0, t_len = 100.0, tau = 0.01
         non_linear_term = - K_2 * pyfftw.numpy_fft.fft2(b * phi_3 + lam_val * grad_phi_2, threads=8) - 1j * zeta * (KX * lapl_phi_prod_grad_phi_x_fft + KY * lapl_phi_prod_grad_phi_y_fft)
         
         # Dealiasing the nonlinear term may improve stability
-        # non_linear_term *= dealiasing_mask
+        non_linear_term *= dealiasing_mask
 
         white_noise_x_fft = pyfftw.numpy_fft.fft2(np.random.standard_normal(size=KX.shape), threads=8)
         white_noise_y_fft = pyfftw.numpy_fft.fft2(np.random.standard_normal(size=KY.shape), threads=8)
@@ -146,6 +161,7 @@ def solve_ambplus_2D(phi_0=None, c_0=0.4, t_state=0.0, t_len = 100.0, tau = 0.01
         gaussian_term = - np.sqrt(2*D*M) * 1j * (KX * white_noise_x_fft + KY * white_noise_y_fft)
 
         f_phi = (f_phi + tau * M * non_linear_term + gaussian_scale * gaussian_term) / (1. + tau * M *(a * K_2 + eps_val * K_4))
+        # f_phi += tau * ( M * non_linear_term - M *(a * K_2 + eps_val * K_4) * f_phi) + gaussian_scale * gaussian_term # explicit euler
 
         # Bookkeeping, setup for next step
         phi = pyfftw.numpy_fft.ifft2(f_phi, threads=8)
@@ -179,10 +195,7 @@ def main():
     #np.random.seed(0)
 
     # Solve an equation
-    #solve_ambplus_2D(phi_0, c_0=0.6, s_N=N, tau=0.02, t_len=30000, D=0.0, lam_val= 0.75 , zeta= 2.0 , s_start=-64, s_end=64)
-    solve_ambplus_2D(phi_0, c_0=0.6, s_N=N, tau=0.02, t_len=195000, D=0.0, lam_val=-0.75, zeta= -2.0  , s_start=-64, s_end=64)
+    solve_ambplus_2D(phi_0, c_0=0.3, s_N=N, tau=0.02, t_len=1200, D=0.0, zeta=-1.0, lam_val=-.5, s_start=-64, s_end=64)
 
 if __name__ == "__main__":
     main()
-
-
